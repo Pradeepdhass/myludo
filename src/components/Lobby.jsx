@@ -1,8 +1,101 @@
-// Setup and Lobby Screen - Room Multiplayer Only
+// Setup and Lobby Screen - Wood-Themed Room Multiplayer
 import React, { useState, useEffect } from 'react';
-import { firebaseService } from '../services/firebase';
-import { Globe, Play, Plus, ArrowRight, AlertTriangle, Key } from 'lucide-react';
-import { COLORS } from '../hooks/useLudo';
+import { Share2, Play, Plus, ArrowRight } from 'lucide-react';
+
+// Cartoon SVG avatars for Ludo colors
+const renderAvatarSvg = (color) => {
+  switch (color) {
+    case 'yellow':
+      return (
+        <svg viewBox="0 0 100 100" className="avatar-img-svg">
+          <circle cx="50" cy="50" r="50" fill="#ffd32a" />
+          {/* Ears */}
+          <circle cx="25" cy="25" r="10" fill="#ffa801" />
+          <circle cx="25" cy="25" r="6" fill="#ff7f50" />
+          <circle cx="75" cy="25" r="10" fill="#ffa801" />
+          <circle cx="75" cy="25" r="6" fill="#ff7f50" />
+          {/* Stripes */}
+          <polygon points="10,40 25,43 10,46" fill="#3d3d3d" />
+          <polygon points="90,40 75,43 90,46" fill="#3d3d3d" />
+          <polygon points="15,60 30,62 15,64" fill="#3d3d3d" />
+          <polygon points="85,60 70,62 85,64" fill="#3d3d3d" />
+          <polygon points="45,10 50,25 55,10" fill="#3d3d3d" />
+          {/* Snout */}
+          <ellipse cx="50" cy="65" rx="16" ry="12" fill="#ffffff" />
+          {/* Eyes */}
+          <circle cx="38" cy="45" r="5" fill="#3d3d3d" />
+          <circle cx="38" cy="44" r="1.5" fill="#ffffff" />
+          <circle cx="62" cy="45" r="5" fill="#3d3d3d" />
+          <circle cx="62" cy="44" r="1.5" fill="#ffffff" />
+          {/* Nose & Mouth */}
+          <polygon points="46,58 54,58 50,64" fill="#ff5e57" />
+          <path d="M 46 68 Q 50 72 54 68" fill="none" stroke="#3d3d3d" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      );
+    case 'green':
+      return (
+        <svg viewBox="0 0 100 100" className="avatar-img-svg">
+          <circle cx="50" cy="50" r="50" fill="#05c46b" />
+          {/* Feather */}
+          <path d="M 50 15 C 40 5, 60 5, 50 15 Z" fill="#0be881" />
+          {/* Eyes */}
+          <circle cx="35" cy="40" r="8" fill="#ffffff" />
+          <circle cx="35" cy="40" r="4" fill="#1e272e" />
+          <circle cx="35" cy="38" r="1.5" fill="#ffffff" />
+          <circle cx="65" cy="40" r="8" fill="#ffffff" />
+          <circle cx="65" cy="40" r="4" fill="#1e272e" />
+          <circle cx="65" cy="38" r="1.5" fill="#ffffff" />
+          {/* Blush */}
+          <circle cx="28" cy="52" r="5" fill="#ff5e57" opacity="0.6" />
+          <circle cx="72" cy="52" r="5" fill="#ff5e57" opacity="0.6" />
+          {/* Beak */}
+          <path d="M 44 48 Q 50 42 56 48 L 50 68 Z" fill="#ffc048" stroke="#d28c00" strokeWidth="1" />
+        </svg>
+      );
+    case 'red':
+      return (
+        <svg viewBox="0 0 100 100" className="avatar-img-svg">
+          <circle cx="50" cy="50" r="50" fill="#ff5e57" />
+          {/* Ears */}
+          <polygon points="15,35 20,5 42,28" fill="#ff3f34" />
+          <polygon points="18,32 23,10 38,26" fill="#ffd2cc" />
+          <polygon points="85,35 80,5 58,28" fill="#ff3f34" />
+          <polygon points="82,32 77,10 62,26" fill="#ffd2cc" />
+          {/* Cheeks */}
+          <path d="M 15 62 Q 35 75 50 62 Q 65 75 85 62 C 75 90, 25 90, 15 62 Z" fill="#ffffff" />
+          {/* Eyes */}
+          <circle cx="35" cy="45" r="5" fill="#1e272e" />
+          <circle cx="35" cy="43" r="1.5" fill="#ffffff" />
+          <circle cx="65" cy="45" r="5" fill="#1e272e" />
+          <circle cx="65" cy="43" r="1.5" fill="#ffffff" />
+          {/* Nose */}
+          <circle cx="50" cy="62" r="6" fill="#1e272e" />
+        </svg>
+      );
+    case 'blue':
+      return (
+        <svg viewBox="0 0 100 100" className="avatar-img-svg">
+          <circle cx="50" cy="50" r="50" fill="#3c40c6" />
+          {/* Fin */}
+          <path d="M 50 15 Q 65 0 60 25 Z" fill="#575fcf" />
+          {/* Belly */}
+          <path d="M 15 70 C 30 92, 70 92, 85 70 C 70 82, 30 82, 15 70 Z" fill="#f1f2f6" />
+          {/* Eyes */}
+          <circle cx="36" cy="42" r="5" fill="#1e272e" />
+          <circle cx="36" cy="40" r="1.5" fill="#ffffff" />
+          <circle cx="64" cy="42" r="5" fill="#1e272e" />
+          <circle cx="64" cy="40" r="1.5" fill="#ffffff" />
+          {/* Gills */}
+          <path d="M 22 45 Q 26 48 22 51" fill="none" stroke="#575fcf" strokeWidth="2" strokeLinecap="round" />
+          <path d="M 78 45 Q 74 48 78 51" fill="none" stroke="#575fcf" strokeWidth="2" strokeLinecap="round" />
+          {/* Mouth */}
+          <path d="M 40 56 Q 50 64 60 56" fill="none" stroke="#1e272e" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+};
 
 export const Lobby = ({
   createOnlineRoom,
@@ -16,14 +109,27 @@ export const Lobby = ({
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('ludo_player_name') || 'Player');
   const [playerColor, setPlayerColor] = useState('random');
   const [roomInput, setRoomInput] = useState('');
+  const [activeTab, setActiveTab] = useState('invite'); // 'invite' or 'join'
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState('');
+
+  // Handle URL parameter prefilling
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if (roomParam) {
+      setRoomInput(roomParam);
+      setActiveTab('join');
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('ludo_player_name', playerName);
   }, [playerName]);
 
-  // Generate random 4-digit number Room ID
+  // Lock tab to Invite when connected to an online room
+  const currentTab = roomId ? 'invite' : activeTab;
+
   const generateRandomRoomId = () => {
     return Math.floor(1000 + Math.random() * 9000).toString();
   };
@@ -31,14 +137,13 @@ export const Lobby = ({
   const handleCreateOnline = async () => {
     setLocalError('');
     if (!playerName.trim()) {
-      setLocalError("Please enter your name");
+      setLocalError("Please enter your name first!");
       return;
     }
     
     setLoading(true);
     const randomId = generateRandomRoomId();
 
-    // Resolve random color for the host
     let resolvedColor = playerColor;
     if (resolvedColor === 'random') {
       const colors = ['yellow', 'green', 'red', 'blue'];
@@ -57,11 +162,11 @@ export const Lobby = ({
   const handleJoinOnline = async () => {
     setLocalError('');
     if (!playerName.trim()) {
-      setLocalError("Please enter your name");
+      setLocalError("Please enter your name first!");
       return;
     }
-    if (!roomInput.trim()) {
-      setLocalError("Please enter a room code to join");
+    if (!roomInput.trim() || roomInput.trim().length < 4) {
+      setLocalError("Please enter a valid 4-digit room ID!");
       return;
     }
     
@@ -75,166 +180,260 @@ export const Lobby = ({
     }
   };
 
-  // Render waiting room lobby once connected
-  if (gameState === 'lobby' && roomId) {
-    const localPlayerObj = lobbyPlayers.find(p => p.id === myPlayerId);
-    const isHost = localPlayerObj ? localPlayerObj.isHost : false;
+  const handleShare = () => {
+    const shareText = `Play Ludo with me! Room ID: ${roomId}`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'Ludo Pro Online',
+        text: shareText,
+        url: shareUrl
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(`${shareText} - ${shareUrl}`);
+      alert("Room link copied to clipboard!");
+    }
+  };
 
+  const renderSlotsGrid = () => {
+    const colors = ['yellow', 'green', 'red', 'blue'];
     return (
-      <div className="lobby-screen glass-panel" style={{ maxWidth: '500px', margin: '0 auto' }}>
-        <h2>Multiplayer Lobby</h2>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>ROOM CODE</span>
-          <div style={{ fontSize: '36px', fontFamily: 'var(--font-mono)', fontWeight: 'bold', color: 'var(--color-yellow)', letterSpacing: '2px', marginTop: '4px' }}>
-            {roomId}
-          </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Share this code with your friends so they can join the game!
-          </p>
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>
-            Players Connected ({lobbyPlayers.length}/4)
-          </h3>
-          <div className="lobby-players-list">
-            {lobbyPlayers.map((p, idx) => (
-              <div key={idx} className="lobby-player-card">
-                <div className="lobby-player-info">
-                  <div className="color-dot" style={{ color: `var(--color-${p.color})`, backgroundColor: `var(--color-${p.color})` }} />
-                  <span style={{ fontWeight: '600' }}>{p.name}</span>
-                  {p.isHost && (
-                    <span style={{ fontSize: '10px', background: 'rgba(245,158,11,0.2)', color: 'var(--color-yellow)', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>
-                      Host
-                    </span>
-                  )}
+      <div className="lobby-grid-container">
+        {colors.map(color => {
+          const p = lobbyPlayers.find(x => x.color === color);
+          if (p) {
+            return (
+              <div key={color} className="lobby-grid-slot">
+                <div className={`avatar-circle-outer slot-${color}`}>
+                  {renderAvatarSvg(color)}
                 </div>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  {p.color.toUpperCase()}
-                </span>
+                <div className="player-name-pill">
+                  {p.name}
+                  {p.isHost && " 👑"}
+                </div>
               </div>
-            ))}
-            
-            {Array.from({ length: 4 - lobbyPlayers.length }).map((_, idx) => (
-              <div key={idx} className="lobby-player-card" style={{ opacity: 0.4, borderStyle: 'dashed' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Waiting for player...</span>
+            );
+          } else {
+            return (
+              <div key={color} className="lobby-grid-slot">
+                <div className="avatar-circle-outer waiting">
+                  <span style={{ fontSize: '28px', color: '#b0bec5', fontWeight: 'bold' }}>+</span>
+                </div>
+                <div className="player-name-pill waiting-label">
+                  WAITING...
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {localError && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-red)', padding: '10px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-            {localError}
-          </div>
-        )}
-
-        {isHost ? (
-          <button 
-            className="glass-button" 
-            style={{ width: '100%', background: 'var(--color-green)', color: '#ffffff', borderColor: 'transparent', height: '48px' }}
-            disabled={lobbyPlayers.length < 2 || loading}
-            onClick={startOnlineGame}
-          >
-            <Play size={18} /> Start Match (Needs 2+ Players)
-          </button>
-        ) : (
-          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '12px', fontSize: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            <span style={{ display: 'inline-block', animation: 'pulse 1.5s infinite' }}>⏳</span> Waiting for host to start the game...
-          </div>
-        )}
+            );
+          }
+        })}
+        <div className="vs-badge-center">VS</div>
       </div>
     );
-  }
+  };
+
+  // Determine if local player is host
+  const localPlayerObj = lobbyPlayers.find(p => p.id === myPlayerId);
+  const isHost = localPlayerObj ? localPlayerObj.isHost : false;
 
   return (
-    <div className="setup-card glass-panel" style={{ maxWidth: '500px', margin: '0 auto' }}>
-      <h2>Online Matchmaker</h2>
-      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
-        Create or join an online room to play Ludo with friends
-      </p>
-
-      {localError && (
-        <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-red)', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-          {localError}
+    <div style={{ maxWidth: '420px', width: '100%', margin: '0 auto', padding: '10px' }}>
+      <div className="wooden-plaque">
+        {/* Play with Friends banner plate */}
+        <div className="wooden-banner">
+          <h2>Play With Friends</h2>
         </div>
-      )}
 
-      <div className="setup-section" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Player details */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '16px' }}>
+        {/* Tab Selection */}
+        <div className="wooden-tab-bar">
+          <button
+            className={`wooden-tab ${currentTab === 'invite' ? 'active' : ''}`}
+            disabled={!!roomId}
+            onClick={() => setActiveTab('invite')}
+          >
+            Invite
+          </button>
+          <button
+            className={`wooden-tab ${currentTab === 'join' ? 'active' : ''}`}
+            disabled={!!roomId}
+            onClick={() => setActiveTab('join')}
+          >
+            Join
+          </button>
+        </div>
+
+        {/* Beige Board Contents */}
+        <div className="wooden-card">
+          {localError && (
+            <div style={{ background: '#ffdddd', border: '2px solid #ff5e57', color: '#b33939', padding: '10px 14px', borderRadius: '12px', fontSize: '13px', marginBottom: '16px', fontWeight: 'bold', textAlign: 'center' }}>
+              ⚠️ {localError}
+            </div>
+          )}
+
+          {/* Connected Lobby Waiting Room */}
+          {roomId ? (
+            <div>
+              {lobbyPlayers.length <= 1 ? (
+                // 1 Player: Show standard instructions
+                <div className="invite-instructions-box">
+                  <div className="invite-instruction-row">
+                    <div className="instruction-num">1</div>
+                    <span>TAP SHARE TO INVITE FRIENDS</span>
+                  </div>
+                  <div className="invite-instruction-row">
+                    <div className="instruction-num">2</div>
+                    <span>WAIT FOR THEM TO JOIN</span>
+                  </div>
+                  <div className="invite-instruction-row">
+                    <div className="instruction-num">3</div>
+                    <span>TAP 'START' AND PLAY!</span>
+                  </div>
+                </div>
+              ) : (
+                // 2+ Players: Show Grid Slots representation
+                renderSlotsGrid()
+              )}
+
+              {/* Room ID and Share Button row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px', marginTop: '16px', alignItems: 'center' }}>
+                <div className="capsule-room-box">
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#8c4e20', letterSpacing: '0.5px' }}>ROOM ID</span>
+                  <span style={{ fontSize: '24px', fontWeight: '800', color: '#4a220f', letterSpacing: '1px', lineHeight: '1' }}>{roomId}</span>
+                </div>
+                
+                <button
+                  className="btn-3d btn-3d-cyan"
+                  style={{ height: '48px', width: '100%' }}
+                  onClick={handleShare}
+                >
+                  <Share2 size={16} /> SHARE
+                </button>
+              </div>
+
+              {/* Host Start / Guest Waiting controls */}
+              <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                {isHost ? (
+                  <>
+                    <p style={{ fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '10px', textTransform: 'uppercase' }}>
+                      WHEN YOU'RE READY, PRESS 'START' TO PLAY
+                    </p>
+                    <button
+                      className="btn-3d btn-3d-green"
+                      style={{ width: '100%', height: '52px', fontSize: '18px' }}
+                      disabled={lobbyPlayers.length < 2 || loading}
+                      onClick={startOnlineGame}
+                    >
+                      <Play size={18} fill="#ffffff" /> START
+                    </button>
+                  </>
+                ) : (
+                  <div style={{ background: 'rgba(140,82,41,0.06)', border: '2px solid rgba(74,34,15,0.1)', color: '#8c4e20', padding: '14px', borderRadius: '16px', fontWeight: 'bold', fontSize: '14px' }}>
+                    <span style={{ display: 'inline-block', animation: 'pulse 1.5s infinite', marginRight: '6px' }}>⏳</span>
+                    Waiting for host to start the game...
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Setup forms (Create / Join options) */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px', color: 'var(--text-secondary)' }}>Your Name</label>
-                <input 
-                  type="text" 
-                  className="glass-input" 
-                  style={{ padding: '12px' }}
-                  value={playerName} 
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '6px', textTransform: 'uppercase' }}>Your Name</label>
+                <input
+                  type="text"
+                  className="capsule-input-container"
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '3px solid #4a220f',
+                    borderRadius: '20px',
+                    color: '#4a220f',
+                    fontWeight: '700',
+                    padding: '12px 18px',
+                    width: '100%',
+                    outline: 'none'
+                  }}
+                  value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Enter username"
+                  placeholder="Enter Username"
+                  maxLength={12}
                 />
               </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px', color: 'var(--text-secondary)' }}>Token Color</label>
-                <select 
-                  className="glass-input" 
-                  style={{ padding: '12px 8px', textTransform: 'capitalize' }}
-                  value={playerColor} 
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '6px', textTransform: 'uppercase' }}>Preferred Color</label>
+                <select
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '3px solid #4a220f',
+                    borderRadius: '20px',
+                    color: '#4a220f',
+                    fontWeight: '700',
+                    padding: '12px 18px',
+                    width: '100%',
+                    outline: 'none',
+                    textTransform: 'capitalize',
+                    cursor: 'pointer'
+                  }}
+                  value={playerColor}
                   onChange={(e) => setPlayerColor(e.target.value)}
                 >
-                  <option value="random" style={{ background: '#121420' }}>🎲 Random Color</option>
-                  {COLORS.map(c => <option key={c} value={c} style={{ background: '#121420' }}>{c}</option>)}
+                  <option value="random">🎲 Random Color</option>
+                  <option value="yellow">Yellow</option>
+                  <option value="green">Green</option>
+                  <option value="red">Red</option>
+                  <option value="blue">Blue</option>
                 </select>
               </div>
-            </div>
 
-            <hr style={{ border: '0', borderTop: '1px solid rgba(255,255,255,0.05)', margin: '10px 0' }} />
+              <hr style={{ border: '0', borderTop: '2px dashed rgba(74,34,15,0.15)', margin: '4px 0' }} />
 
-            {/* Create Room Box */}
-            <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ fontSize: '14px', margin: 0 }}>Host a Game</h3>
-                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>Generates a random room code</p>
+              {activeTab === 'invite' ? (
+                /* Host View setup */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p style={{ fontSize: '13px', color: '#8c4e20', textAlign: 'center', margin: '0 0 4px 0', fontWeight: '600' }}>
+                    Create a new room and invite your friends!
+                  </p>
+                  <button
+                    className="btn-3d btn-3d-yellow"
+                    style={{ width: '100%', height: '48px' }}
+                    disabled={loading}
+                    onClick={handleCreateOnline}
+                  >
+                    <Plus size={16} strokeWidth={3} /> CREATE ROOM
+                  </button>
                 </div>
-                <button 
-                  className="glass-button" 
-                  disabled={loading} 
-                  onClick={handleCreateOnline}
-                  style={{ background: 'var(--color-yellow)', color: '#000000', borderColor: 'transparent', padding: '10px 16px', fontWeight: 'bold' }}
-                >
-                  <Plus size={16} /> Create Room
-                </button>
-              </div>
+              ) : (
+                /* Join View setup */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <p style={{ fontSize: '13px', color: '#8c4e20', textAlign: 'center', margin: '0 0 4px 0', fontWeight: '600' }}>
+                    ENTER THE ROOM ID TO PLAY WITH YOUR FRIENDS
+                  </p>
+                  <div className="capsule-input-container">
+                    <input
+                      type="text"
+                      placeholder="ENTER THE ROOM ID HERE..."
+                      value={roomInput}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, '');
+                        if (val.length <= 4) setRoomInput(val);
+                      }}
+                    />
+                    <button
+                      className="capsule-input-arrow-btn"
+                      disabled={loading}
+                      onClick={handleJoinOnline}
+                      title="Join Room"
+                    >
+                      <ArrowRight size={20} strokeWidth={3} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Join Room Box */}
-            <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-               <h3 style={{ fontSize: '14px', margin: 0 }}>Join a Friend's Game</h3>
-               <div style={{ display: 'flex', gap: '12px' }}>
-                <input 
-                  type="text" 
-                  className="glass-input" 
-                  style={{ fontFamily: 'var(--font-mono)', letterSpacing: '1px', textTransform: 'uppercase', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', padding: '10px' }}
-                  placeholder="ENTER 4-DIGIT CODE" 
-                  value={roomInput} 
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9]/g, '');
-                    if (val.length <= 4) setRoomInput(val);
-                  }}
-                />
-                <button 
-                  className="glass-button" 
-                  disabled={loading} 
-                  onClick={handleJoinOnline}
-                  style={{ background: 'var(--color-blue)', color: '#ffffff', borderColor: 'transparent', padding: '10px 20px', fontWeight: 'bold' }}
-                >
-                  <ArrowRight size={16} /> Join
-                </button>
-              </div>
-            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
+
 export default Lobby;

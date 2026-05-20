@@ -727,13 +727,18 @@ export const useLudo = () => {
   const startOnlineGame = async () => {
     if (gameMode !== 'online' || !roomId) return;
     try {
+      const activeColors = lobbyPlayers.map(p => p.color);
+      const turnOrder = ['yellow', 'green', 'red', 'blue'];
+      const firstActiveColor = turnOrder.find(c => activeColors.includes(c)) || activeColors[0] || 'yellow';
+
       await firebaseService.updateRoom(roomId, {
         gameState: 'playing',
+        turn: firstActiveColor,
         lastAction: {
           type: 'start',
           player: myColor,
           timestamp: new Date().toISOString(),
-          summary: `Host started the game!`
+          summary: `Host started the game! It's ${firstActiveColor.toUpperCase()}'s turn.`
         }
       });
       setGameState('playing');
