@@ -46,7 +46,15 @@ export const GameBoard = ({ positions, playableTokens, onTokenClick, turn }) => 
                       height: '80%'
                     }}
                     title={`${color.toUpperCase()} Token ${tokenIdx + 1}`}
-                  />
+                  >
+                    {isPlayable && (
+                      <div className="playable-arrow-indicator">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 24l-8-12h6v-12h4v12h6z" stroke="#000" strokeWidth="2.5" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             );
@@ -190,7 +198,15 @@ export const GameBoard = ({ positions, playableTokens, onTokenClick, turn }) => 
                 onClick={isPlayable ? () => onTokenClick(occ.color, occ.tokenIdx) : undefined}
                 style={{ color: `var(--color-${occ.color})` }}
                 title={`${occ.color.toUpperCase()} Token ${occ.tokenIdx + 1}`}
-              />
+              >
+                {isPlayable && (
+                  <div className="playable-arrow-indicator">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 24l-8-12h6v-12h4v12h6z" stroke="#000" strokeWidth="2.5" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

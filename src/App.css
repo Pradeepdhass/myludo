@@ -1580,4 +1580,27 @@ header p {
 .six-dots .dice-dot:nth-child(5) { grid-column: 1; grid-row: 3; }
 .six-dots .dice-dot:nth-child(6) { grid-column: 3; grid-row: 3; }
 
+/* Playable Token Bouncing Arrow Highlight */
+.playable-arrow-indicator {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 22px;
+  z-index: 99;
+  animation: bounce-arrow-down 0.5s infinite alternate ease-in-out;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.45));
+}
+
+@keyframes bounce-arrow-down {
+  0% {
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    transform: translateX(-50%) translateY(-6px);
+  }
+}
+
 
