@@ -11,23 +11,17 @@ export const Lobby = ({
   roomId,
   lobbyPlayers,
   gameState,
-  onOpenSettings,
   myPlayerId
 }) => {
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('ludo_player_name') || 'Player');
   const [playerColor, setPlayerColor] = useState('random');
   const [roomInput, setRoomInput] = useState('');
-  const [isFirebaseOk, setIsFirebaseOk] = useState(false);
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState('');
 
   useEffect(() => {
     localStorage.setItem('ludo_player_name', playerName);
   }, [playerName]);
-
-  useEffect(() => {
-    setIsFirebaseOk(firebaseService.isAvailable());
-  }, [roomId, gameState]);
 
   // Generate random 4-digit number Room ID
   const generateRandomRoomId = () => {
@@ -167,20 +161,6 @@ export const Lobby = ({
       )}
 
       <div className="setup-section" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {!isFirebaseOk ? (
-          <div style={{ padding: '16px', background: 'rgba(245, 158, 11, 0.08)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', gap: '8px', color: 'var(--color-yellow)', fontWeight: '600', alignItems: 'center' }}>
-              <AlertTriangle size={18} /> Firebase is not configured
-            </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-              Online mode requires Firebase credentials. Click the gear settings icon in the top right to configure your connection in 5 seconds.
-            </p>
-            <button className="glass-button" style={{ fontSize: '12px', padding: '8px 16px' }} onClick={onOpenSettings}>
-              Configure Firebase Credentials
-            </button>
-          </div>
-        ) : (
-          <>
             {/* Player details */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '16px' }}>
               <div>
@@ -230,8 +210,8 @@ export const Lobby = ({
 
             {/* Join Room Box */}
             <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h3 style={{ fontSize: '14px', margin: 0 }}>Join a Friend's Game</h3>
-              <div style={{ display: 'flex', gap: '12px' }}>
+               <h3 style={{ fontSize: '14px', margin: 0 }}>Join a Friend's Game</h3>
+               <div style={{ display: 'flex', gap: '12px' }}>
                 <input 
                   type="text" 
                   className="glass-input" 
@@ -253,8 +233,6 @@ export const Lobby = ({
                 </button>
               </div>
             </div>
-          </>
-        )}
       </div>
     </div>
   );

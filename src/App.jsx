@@ -6,8 +6,7 @@ import GameBoard from './components/GameBoard';
 import Dice from './components/Dice';
 import GameLog from './components/GameLog';
 import Lobby from './components/Lobby';
-import FirebaseConfigModal from './components/FirebaseConfigModal';
-import { Settings, Info, Trophy, RotateCcw } from 'lucide-react';
+import { Info, Trophy, RotateCcw } from 'lucide-react';
 
 function App() {
   const {
@@ -38,7 +37,7 @@ function App() {
     getValidMoves
   } = useLudo();
 
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
+
 
   // Compute which tokens the active human player can click to move
   const getPlayableTokens = () => {
@@ -64,14 +63,7 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Floating Gear Settings Icon (Top Right) */}
-      <button 
-        className="glass-button settings-trigger"
-        onClick={() => setIsConfigOpen(true)}
-        title="Firebase Settings"
-      >
-        <Settings size={20} />
-      </button>
+
 
       <header>
         <h1>🏆 Ludo Pro</h1>
@@ -90,7 +82,6 @@ function App() {
           lobbyPlayers={lobbyPlayers}
           gameState={gameState}
           myPlayerId={myPlayerId}
-          onOpenSettings={() => setIsConfigOpen(true)}
         />
       ) : gameState === 'lobby' && roomId ? (
         // Lobby waiting for start
@@ -105,7 +96,6 @@ function App() {
             lobbyPlayers={lobbyPlayers}
             gameState={gameState}
             myPlayerId={myPlayerId}
-            onOpenSettings={() => setIsConfigOpen(true)}
           />
         </div>
       ) : (
@@ -195,12 +185,6 @@ function App() {
         </div>
       )}
 
-      {/* Firebase configuration modal */}
-      <FirebaseConfigModal
-        isOpen={isConfigOpen}
-        onClose={() => setIsConfigOpen(false)}
-        onSave={() => {}}
-      />
     </div>
   );
 }
