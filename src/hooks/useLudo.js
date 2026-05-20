@@ -108,6 +108,8 @@ export const useLudo = () => {
   const [finishedPlayers, setFinishedPlayers] = useState([]);
   const [logs, setLogs] = useState([{ time: new Date().toLocaleTimeString(), text: 'Welcome to Ludo Professional!' }]);
   const [isMoving, setIsMoving] = useState(false); // Disable interaction during slide animations
+  const [turnTimer, setTurnTimer] = useState(15);
+  const MAX_TURN_TIME = 15;
 
   const syncBlocked = useRef(false);
 
@@ -559,6 +561,70 @@ export const useLudo = () => {
     }
   }, [turn, diceState, hasPendingMove, players, gameMode, gameState, executeAIMove]);
 
+  // Handle Timeout for turn countdown
+  const handleTimeout = useCallback(() => {
+    const activePlayer = players[turn];
+    if (!activePlayer || (gameMode !== 'online' && activePlayer.isAI) || gameState !== 'playing') {
+      return;
+    }
+
+    // In online mode, only current player triggers auto-action to avoid double roll/move updates
+    if (gameMode === 'online' && turn !== myColor) {
+      return;
+    }
+
+    addLog(`⏰ Time's up for ${activePlayer.name}!`);
+
+    if (diceState === 'idle') {
+      rollDice();
+    } else if (diceState === 'rolled' && hasPendingMove) {
+      const validMoves = getValidMoves(turn, diceValue, positions);
+      if (validMoves.length > 0) {
+        const chosenTokenIdx = validMoves[0];
+        addLog(`🤖 Auto-moving token ${chosenTokenIdx + 1}`);
+        executeMove(turn, chosenTokenIdx, diceValue);
+      } else {
+        const nextTurnColor = getNextTurn(turn, players, finishedPlayers);
+        setTurn(nextTurnColor);
+        setRolledSixCount(0);
+        setDiceState('idle');
+        setHasPendingMove(false);
+        if (gameMode === 'online') {
+          syncToFirebase({
+            turn: nextTurnColor,
+            diceState: 'idle',
+            rolledSixCount: 0,
+            hasPendingMove: false
+          });
+        }
+      }
+    }
+  }, [turn, players, gameMode, myColor, diceState, hasPendingMove, diceValue, positions, getValidMoves, rollDice, executeMove, addLog, finishedPlayers, getNextTurn, syncToFirebase]);
+
+  // Reset timer on state changes
+  useEffect(() => {
+    if (gameState === 'playing') {
+      setTurnTimer(MAX_TURN_TIME);
+    }
+  }, [turn, diceState, hasPendingMove, gameState]);
+
+  // Timer countdown interval
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+
+    const interval = setInterval(() => {
+      setTurnTimer((prev) => {
+        if (prev <= 1) {
+          handleTimeout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [gameState, handleTimeout]);
+
   // Online Multiplayer database listening sync
   useEffect(() => {
     if (gameMode !== 'online' || !roomId) return;
@@ -782,6 +848,8 @@ export const useLudo = () => {
     startOnlineGame,
     exitToSetup,
     addLog,
-    getValidMoves
+    getValidMoves,
+    turnTimer,
+    MAX_TURN_TIME
   };
 };

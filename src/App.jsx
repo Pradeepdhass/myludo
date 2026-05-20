@@ -35,7 +35,9 @@ function App() {
     joinOnlineRoom,
     startOnlineGame,
     exitToSetup,
-    getValidMoves
+    getValidMoves,
+    turnTimer,
+    MAX_TURN_TIME
   } = useLudo();
 
 
@@ -164,31 +166,69 @@ function App() {
     else if (color === 'red') emoji = '🦊';
     else if (color === 'blue') emoji = '🦈';
 
+    const radius = 41;
+    const circumference = 2 * Math.PI * radius; // 257.6
+    const strokeDashoffset = circumference - (turnTimer / MAX_TURN_TIME) * circumference;
+
     return (
       <div className={`player-profile-row ${side === 'left' ? 'left-align' : 'right-align'}`}>
-        <div className={`player-profile-avatar-outer ${isCurrentTurn ? `active-turn ${color}-turn` : ''}`}>
-          <div className="player-profile-avatar-inner">
-            {renderAvatarSvg(color)}
+        {/* Avatar Wrapper with circular progress ring */}
+        <div className="player-profile-avatar-wrapper" style={{ position: 'relative', width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {isCurrentTurn && (
+            <svg width="90" height="90" style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)', zIndex: 10, pointerEvents: 'none' }}>
+              <circle
+                cx="45"
+                cy="45"
+                r={radius}
+                fill="transparent"
+                stroke="rgba(255,255,255,0.1)"
+                strokeWidth="4"
+              />
+              <circle
+                cx="45"
+                cy="45"
+                r={radius}
+                fill="transparent"
+                stroke={`var(--color-${color})`}
+                strokeWidth="4"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                style={{
+                  transition: 'stroke-dashoffset 0.25s linear',
+                  filter: `drop-shadow(0 0 4px var(--color-${color}))`
+                }}
+              />
+            </svg>
+          )}
+
+          <div className={`player-profile-avatar-outer ${isCurrentTurn ? `active-turn ${color}-turn` : ''}`}>
+            <div className="player-profile-avatar-inner">
+              {renderAvatarSvg(color)}
+            </div>
+            <div className="player-emoji-badge">{emoji}</div>
           </div>
-          <div className="player-emoji-badge">{emoji}</div>
         </div>
 
-        <div className={`player-profile-name-capsule ${color}-banner`}>
-          {p.name}
-        </div>
-
-        {isCurrentTurn && (
-          <div className="player-profile-dice-wrap">
-            <Dice
-              value={diceValue}
-              state={diceState}
-              onClick={rollDice}
-              disabled={!isMyTurn || diceState !== 'idle' || hasPendingMove || isMoving}
-              isMyTurn={isMyTurn && diceState === 'idle' && !hasPendingMove && !isMoving}
-              turnName={players[turn]?.name}
-            />
+        {/* Info Column containing Name Pill on top, Dice on bottom (if turn) */}
+        <div className="player-profile-info-col" style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: side === 'left' ? 'flex-start' : 'flex-end', zIndex: 5 }}>
+          <div className={`player-profile-name-capsule ${color}-banner`}>
+            {p.name}
           </div>
-        )}
+
+          {isCurrentTurn && (
+            <div className="player-profile-dice-wrap">
+              <Dice
+                value={diceValue}
+                state={diceState}
+                onClick={rollDice}
+                disabled={!isMyTurn || diceState !== 'idle' || hasPendingMove || isMoving}
+                isMyTurn={isMyTurn && diceState === 'idle' && !hasPendingMove && !isMoving}
+                color={color}
+              />
+            </div>
+          )}
+        </div>
       </div>
     );
   };
