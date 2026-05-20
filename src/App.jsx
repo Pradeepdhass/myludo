@@ -6,7 +6,8 @@ import GameBoard from './components/GameBoard';
 import Dice from './components/Dice';
 import GameLog from './components/GameLog';
 import Lobby from './components/Lobby';
-import { Info, Trophy, RotateCcw } from 'lucide-react';
+import { Info, Trophy, RotateCcw, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
+import { audio } from './services/audio';
 
 function App() {
   const {
@@ -58,6 +59,140 @@ function App() {
     return getValidMoves(turn, diceValue, positions);
   };
 
+  const [isMuted, setIsMuted] = useState(() => {
+    const stored = localStorage.getItem('ludo_muted');
+    const isMutedBool = stored === 'true';
+    audio.setMuted(isMutedBool);
+    return isMutedBool;
+  });
+
+  const toggleMute = () => {
+    const newState = !isMuted;
+    setIsMuted(newState);
+    localStorage.setItem('ludo_muted', newState.toString());
+    audio.setMuted(newState);
+  };
+
+  const renderAvatarSvg = (color) => {
+    switch (color) {
+      case 'yellow':
+        return (
+          <svg viewBox="0 0 100 100" className="avatar-img-svg">
+            <circle cx="50" cy="50" r="50" fill="#ffd32a" />
+            <circle cx="25" cy="25" r="10" fill="#ffa801" />
+            <circle cx="25" cy="25" r="6" fill="#ff7f50" />
+            <circle cx="75" cy="25" r="10" fill="#ffa801" />
+            <circle cx="75" cy="25" r="6" fill="#ff7f50" />
+            <polygon points="10,40 25,43 10,46" fill="#3d3d3d" />
+            <polygon points="90,40 75,43 90,46" fill="#3d3d3d" />
+            <polygon points="15,60 30,62 15,64" fill="#3d3d3d" />
+            <polygon points="85,60 70,62 85,64" fill="#3d3d3d" />
+            <polygon points="45,10 50,25 55,10" fill="#3d3d3d" />
+            <ellipse cx="50" cy="65" rx="16" ry="12" fill="#ffffff" />
+            <circle cx="38" cy="45" r="5" fill="#3d3d3d" />
+            <circle cx="38" cy="44" r="1.5" fill="#ffffff" />
+            <circle cx="62" cy="45" r="5" fill="#3d3d3d" />
+            <circle cx="62" cy="44" r="1.5" fill="#ffffff" />
+            <polygon points="46,58 54,58 50,64" fill="#ff5e57" />
+            <path d="M 46 68 Q 50 72 54 68" fill="none" stroke="#3d3d3d" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+        );
+      case 'green':
+        return (
+          <svg viewBox="0 0 100 100" className="avatar-img-svg">
+            <circle cx="50" cy="50" r="50" fill="#05c46b" />
+            <path d="M 50 15 C 40 5, 60 5, 50 15 Z" fill="#0be881" />
+            <circle cx="35" cy="40" r="8" fill="#ffffff" />
+            <circle cx="35" cy="40" r="4" fill="#1e272e" />
+            <circle cx="35" cy="38" r="1.5" fill="#ffffff" />
+            <circle cx="65" cy="40" r="8" fill="#ffffff" />
+            <circle cx="65" cy="40" r="4" fill="#1e272e" />
+            <circle cx="65" cy="38" r="1.5" fill="#ffffff" />
+            <circle cx="28" cy="52" r="5" fill="#ff5e57" opacity="0.6" />
+            <circle cx="72" cy="52" r="5" fill="#ff5e57" opacity="0.6" />
+            <path d="M 44 48 Q 50 42 56 48 L 50 68 Z" fill="#ffc048" stroke="#d28c00" strokeWidth="1" />
+          </svg>
+        );
+      case 'red':
+        return (
+          <svg viewBox="0 0 100 100" className="avatar-img-svg">
+            <circle cx="50" cy="50" r="50" fill="#ff5e57" />
+            <polygon points="15,35 20,5 42,28" fill="#ff3f34" />
+            <polygon points="18,32 23,10 38,26" fill="#ffd2cc" />
+            <polygon points="85,35 80,5 58,28" fill="#ff3f34" />
+            <polygon points="82,32 77,10 62,26" fill="#ffd2cc" />
+            <path d="M 15 62 Q 35 75 50 62 Q 65 75 85 62 C 75 90, 25 90, 15 62 Z" fill="#ffffff" />
+            <circle cx="35" cy="45" r="5" fill="#1e272e" />
+            <circle cx="35" cy="43" r="1.5" fill="#ffffff" />
+            <circle cx="65" cy="45" r="5" fill="#1e272e" />
+            <circle cx="65" cy="43" r="1.5" fill="#ffffff" />
+            <circle cx="50" cy="62" r="6" fill="#1e272e" />
+          </svg>
+        );
+      case 'blue':
+        return (
+          <svg viewBox="0 0 100 100" className="avatar-img-svg">
+            <circle cx="50" cy="50" r="50" fill="#3c40c6" />
+            <path d="M 50 15 Q 65 0 60 25 Z" fill="#575fcf" />
+            <path d="M 15 70 C 30 92, 70 92, 85 70 C 70 82, 30 82, 15 70 Z" fill="#f1f2f6" />
+            <circle cx="36" cy="42" r="5" fill="#1e272e" />
+            <circle cx="36" cy="40" r="1.5" fill="#ffffff" />
+            <circle cx="64" cy="42" r="5" fill="#1e272e" />
+            <circle cx="64" cy="40" r="1.5" fill="#ffffff" />
+            <path d="M 22 45 Q 26 48 22 51" fill="none" stroke="#575fcf" strokeWidth="2" strokeLinecap="round" />
+            <path d="M 78 45 Q 74 48 78 51" fill="none" stroke="#575fcf" strokeWidth="2" strokeLinecap="round" />
+            <path d="M 40 56 Q 50 64 60 56" fill="none" stroke="#1e272e" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderPlayerProfile = (color, side) => {
+    const p = players[color];
+    if (!p || !p.active) {
+      return <div className="profile-placeholder" />;
+    }
+
+    const isCurrentTurn = turn === color;
+
+    // Small emoji badge
+    let emoji = '😀';
+    if (color === 'yellow') emoji = '🐯';
+    else if (color === 'green') emoji = '🦜';
+    else if (color === 'red') emoji = '🦊';
+    else if (color === 'blue') emoji = '🦈';
+
+    return (
+      <div className={`player-profile-row ${side === 'left' ? 'left-align' : 'right-align'}`}>
+        <div className={`player-profile-avatar-outer ${isCurrentTurn ? `active-turn ${color}-turn` : ''}`}>
+          <div className="player-profile-avatar-inner">
+            {renderAvatarSvg(color)}
+          </div>
+          <div className="player-emoji-badge">{emoji}</div>
+        </div>
+
+        <div className={`player-profile-name-capsule ${color}-banner`}>
+          {p.name}
+        </div>
+
+        {isCurrentTurn && (
+          <div className="player-profile-dice-wrap">
+            <Dice
+              value={diceValue}
+              state={diceState}
+              onClick={rollDice}
+              disabled={!isMyTurn || diceState !== 'idle' || hasPendingMove || isMoving}
+              isMyTurn={isMyTurn && diceState === 'idle' && !hasPendingMove && !isMoving}
+              turnName={players[turn]?.name}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const playableTokens = getPlayableTokens();
   const isMyTurn = gameMode !== 'online' ? !players[turn]?.isAI : turn === myColor;
 
@@ -100,45 +235,74 @@ function App() {
         </div>
       ) : (
         // Active Match Layout (Playing or Finished)
-        <div className="main-layout">
-          {/* Game Board and Local Dice Controls */}
-          <div className="game-area">
-            <GameBoard
-              positions={positions}
-              playableTokens={playableTokens}
-              onTokenClick={(color, idx) => executeMove(color, idx, diceValue)}
-              turn={turn}
-            />
-            
-            {/* Dice Panel */}
-            <div className="glass-panel" style={{ width: '100%', maxWidth: '300px', padding: '16px', borderRadius: '16px' }}>
-              <Dice
-                value={diceValue}
-                state={diceState}
-                onClick={rollDice}
-                disabled={!isMyTurn || diceState !== 'idle' || hasPendingMove || isMoving}
-                isMyTurn={isMyTurn && diceState === 'idle' && !hasPendingMove && !isMoving}
-                turnName={players[turn]?.name}
+        <div className="game-screen-container">
+          {/* Top Bar: Back & Sound */}
+          <div className="game-top-bar">
+            <button 
+              className="btn-3d btn-3d-cyan square-btn" 
+              onClick={() => {
+                if (window.confirm("Are you sure you want to exit the current match? Your progress will be lost.")) {
+                  exitToSetup();
+                }
+              }}
+              title="Exit Game"
+            >
+              <ArrowLeft size={24} strokeWidth={3} />
+            </button>
+            <button 
+              className="btn-3d btn-3d-cyan square-btn" 
+              onClick={toggleMute}
+              title={isMuted ? "Unmute Sound" : "Mute Sound"}
+            >
+              {isMuted ? <VolumeX size={24} strokeWidth={3} /> : <Volume2 size={24} strokeWidth={3} />}
+            </button>
+          </div>
+
+          {/* Main Gameplay Screen Grid */}
+          <div className="game-main-layout">
+            {/* Left Side: Yellow & Red */}
+            <div className="profiles-column left-side">
+              {renderPlayerProfile('yellow', 'left')}
+              {renderPlayerProfile('red', 'left')}
+            </div>
+
+            {/* Center: Ludo Board */}
+            <div className="board-center-area">
+              <GameBoard
+                positions={positions}
+                playableTokens={playableTokens}
+                onTokenClick={(color, idx) => executeMove(color, idx, diceValue)}
+                turn={turn}
               />
               
+              {/* Consecutive Sixes Badge */}
               {rolledSixCount > 0 && (
-                <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-yellow)', marginTop: '8px', fontWeight: 'bold' }}>
+                <div style={{ 
+                  textAlign: 'center', 
+                  fontSize: '14px', 
+                  color: 'var(--color-yellow)', 
+                  marginTop: '16px', 
+                  fontWeight: 'bold',
+                  background: 'rgba(0,0,0,0.6)',
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  border: '1.5px solid var(--color-yellow)',
+                  display: 'inline-block',
+                  position: 'relative',
+                  left: '50%',
+                  transform: 'translateX(-50%)'
+                }}>
                   🎲 Consecutive Sixes: {rolledSixCount}/3
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Sidebar (Logs, Scores, Standings) */}
-          <GameLog
-            turn={turn}
-            players={players}
-            logs={logs}
-            onExit={exitToSetup}
-            finishedPlayers={finishedPlayers}
-            gameMode={gameMode}
-            roomId={roomId}
-          />
+            {/* Right Side: Green & Blue */}
+            <div className="profiles-column right-side">
+              {renderPlayerProfile('green', 'right')}
+              {renderPlayerProfile('blue', 'right')}
+            </div>
+          </div>
         </div>
       )}
 

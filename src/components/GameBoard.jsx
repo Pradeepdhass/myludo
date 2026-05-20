@@ -65,10 +65,10 @@ export const GameBoard = ({ positions, playableTokens, onTokenClick, turn }) => 
           <polygon points="0,0 50,50 0,100" fill="var(--color-yellow)" />
           {/* Green Triangle (Top) */}
           <polygon points="0,0 50,50 100,0" fill="var(--color-green)" />
-          {/* Red Triangle (Right) */}
-          <polygon points="100,0 50,50 100,100" fill="var(--color-red)" />
-          {/* Blue Triangle (Bottom) */}
-          <polygon points="0,100 50,50 100,100" fill="var(--color-blue)" />
+          {/* Blue Triangle (Right) - Bottom-Right is Blue */}
+          <polygon points="100,0 50,50 100,100" fill="var(--color-blue)" />
+          {/* Red Triangle (Bottom) - Bottom-Left is Red */}
+          <polygon points="0,100 50,50 100,100" fill="var(--color-red)" />
           
           {/* Central dividers */}
           <polygon points="0,0 100,0 100,100 0,100" fill="none" stroke="#ffffff" strokeWidth="2" />
@@ -101,15 +101,15 @@ export const GameBoard = ({ positions, playableTokens, onTokenClick, turn }) => 
         x = 14;
         continue;
       }
-      // 3. Bottom-Left Yard area (Rows 9-14, Cols 0-5)
+      // 3. Bottom-Left Yard area (Rows 9-14, Cols 0-5) - RED
       if (x === 0 && y === 9) {
-        cells.push(renderYard('blue'));
+        cells.push(renderYard('red'));
         x = 5;
         continue;
       }
-      // 4. Bottom-Right Yard area (Rows 9-14, Cols 9-14)
+      // 4. Bottom-Right Yard area (Rows 9-14, Cols 9-14) - BLUE
       if (x === 9 && y === 9) {
-        cells.push(renderYard('red'));
+        cells.push(renderYard('blue'));
         x = 14;
         continue;
       }
@@ -135,14 +135,14 @@ export const GameBoard = ({ positions, playableTokens, onTokenClick, turn }) => 
       // Start zones
       if (x === 1 && y === 6) cellClass += ' start-yellow';
       else if (x === 8 && y === 1) cellClass += ' start-green';
-      else if (x === 13 && y === 8) cellClass += ' start-red';
-      else if (x === 6 && y === 13) cellClass += ' start-blue';
+      else if (x === 13 && y === 8) cellClass += ' start-blue'; // bottom-right start is Blue
+      else if (x === 6 && y === 13) cellClass += ' start-red';  // bottom-left start is Red
 
       // Home run lanes
       else if (y === 7 && x >= 1 && x <= 5) cellClass += ' homerun-yellow';
       else if (x === 7 && y >= 1 && y <= 5) cellClass += ' homerun-green';
-      else if (y === 7 && x >= 9 && x <= 13) cellClass += ' homerun-red';
-      else if (x === 7 && y >= 9 && y <= 13) cellClass += ' homerun-blue';
+      else if (y === 7 && x >= 9 && x <= 13) cellClass += ' homerun-blue'; // right lane is Blue
+      else if (x === 7 && y >= 9 && y <= 13) cellClass += ' homerun-red';  // bottom lane is Red
 
       // Safe star cells
       const isStarCoord = (x === 2 && y === 8) || (x === 6 && y === 2) || (x === 12 && y === 6) || (x === 8 && y === 12);
@@ -166,11 +166,11 @@ export const GameBoard = ({ positions, playableTokens, onTokenClick, turn }) => 
         else if (x === 8 && y >= 0 && y <= 5) cellClass += ' path-green';
         else if (y === 6 && x >= 9 && x <= 14) cellClass += ' path-green'; // green route continues right
         
-        else if (y === 8 && x >= 9 && x <= 14) cellClass += ' path-red';
-        else if (x === 8 && y >= 9 && y <= 14) cellClass += ' path-red'; // red route continues down
+        else if (y === 8 && x >= 9 && x <= 14) cellClass += ' path-blue';
+        else if (x === 8 && y >= 9 && y <= 14) cellClass += ' path-blue'; // blue route continues down (bottom-right)
         
-        else if (x === 6 && y >= 9 && y <= 14) cellClass += ' path-blue';
-        else if (y === 8 && x >= 0 && x <= 5) cellClass += ' path-blue'; // blue route continues left
+        else if (x === 6 && y >= 9 && y <= 14) cellClass += ' path-red';
+        else if (y === 8 && x >= 0 && x <= 5) cellClass += ' path-red'; // red route continues left (bottom-left)
       }
 
       // 7. Find overlapping tokens on this cell
@@ -200,8 +200,14 @@ export const GameBoard = ({ positions, playableTokens, onTokenClick, turn }) => 
 
   return (
     <div className="board-container">
-      <div className="ludo-board">
-        {cells}
+      <div className="board-wrapper">
+        <div className="wood-corner top-left"></div>
+        <div className="wood-corner top-right"></div>
+        <div className="wood-corner bottom-left"></div>
+        <div className="wood-corner bottom-right"></div>
+        <div className="ludo-board">
+          {cells}
+        </div>
       </div>
     </div>
   );

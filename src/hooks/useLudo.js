@@ -8,8 +8,8 @@ export const COLORS = ['yellow', 'green', 'red', 'blue'];
 export const START_CELLS = {
   yellow: 1,
   green: 14,
-  red: 27,
-  blue: 40
+  red: 40,
+  blue: 27
 };
 
 export const SAFE_CELLS = [1, 9, 14, 22, 27, 35, 40, 48];
@@ -32,8 +32,8 @@ export const TRACK_COORDS = [
 export const YARD_COORDS = {
   yellow: [{x: 2, y: 2}, {x: 3, y: 2}, {x: 2, y: 3}, {x: 3, y: 3}],
   green: [{x: 11, y: 2}, {x: 12, y: 2}, {x: 11, y: 3}, {x: 12, y: 3}],
-  red: [{x: 11, y: 11}, {x: 12, y: 11}, {x: 11, y: 12}, {x: 12, y: 12}],
-  blue: [{x: 2, y: 11}, {x: 3, y: 11}, {x: 2, y: 12}, {x: 3, y: 12}]
+  red: [{x: 2, y: 11}, {x: 3, y: 11}, {x: 2, y: 12}, {x: 3, y: 12}],
+  blue: [{x: 11, y: 11}, {x: 12, y: 11}, {x: 11, y: 12}, {x: 12, y: 12}]
 };
 
 // Map logical position to board cell (x, y)
@@ -54,8 +54,8 @@ export const getTokenCoordinates = (color, tokenIdx, pos) => {
     switch (color) {
       case 'yellow': return {x: 1 + step, y: 7};
       case 'green': return {x: 7, y: 1 + step};
-      case 'red': return {x: 13 - step, y: 7};
-      case 'blue': return {x: 7, y: 13 - step};
+      case 'red': return {x: 7, y: 13 - step};
+      case 'blue': return {x: 13 - step, y: 7};
       default: return {x: 7, y: 7};
     }
   }
@@ -64,8 +64,8 @@ export const getTokenCoordinates = (color, tokenIdx, pos) => {
   switch (color) {
     case 'yellow': return {x: 6, y: 7};
     case 'green': return {x: 7, y: 6};
-    case 'red': return {x: 8, y: 7};
-    case 'blue': return {x: 7, y: 8};
+    case 'red': return {x: 7, y: 8};
+    case 'blue': return {x: 8, y: 7};
     default: return {x: 7, y: 7};
   }
 };

@@ -1133,3 +1133,283 @@ header p {
   box-shadow: 0 1px 0 #b3390c;
 }
 
+/* Game Board Wrapper & Corner Feet */
+.board-wrapper {
+  position: relative;
+  padding: 18px;
+  background-color: #542711;
+  background-image: linear-gradient(135deg, #6e3a19, #4a220f);
+  border: 4px solid #301406;
+  border-radius: 20px;
+  box-shadow: 
+    0 16px 36px rgba(0,0,0,0.5), 
+    inset 0 0 12px rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.wood-corner {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  background-color: #8c5230;
+  background-image: radial-gradient(circle, #a1643f 20%, #754020 80%);
+  border: 3.5px solid #301406;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  z-index: 5;
+}
+
+.wood-corner.top-left {
+  top: -4px;
+  left: -4px;
+  border-radius: 12px 4px 18px 4px;
+}
+.wood-corner.top-right {
+  top: -4px;
+  right: -4px;
+  border-radius: 4px 12px 4px 18px;
+}
+.wood-corner.bottom-left {
+  bottom: -4px;
+  left: -4px;
+  border-radius: 4px 18px 4px 12px;
+}
+.wood-corner.bottom-right {
+  bottom: -4px;
+  right: -4px;
+  border-radius: 18px 4px 12px 4px;
+}
+
+/* Landscape Active Game Screen Layout */
+.game-screen-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  padding: 10px;
+}
+
+.game-top-bar {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 24px;
+  z-index: 10;
+}
+
+.square-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.game-main-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 240px;
+  gap: 20px;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.profiles-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 450px;
+  padding: 10px 0;
+}
+
+.profiles-column.left-side {
+  align-items: flex-start;
+}
+
+.profiles-column.right-side {
+  align-items: flex-end;
+}
+
+.profile-placeholder {
+  height: 94px;
+  width: 100%;
+}
+
+/* Mirrored Player Profiles */
+.player-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.player-profile-row.left-align {
+  flex-direction: row; /* Avatar on left, name capsule extends right */
+}
+
+.player-profile-row.right-align {
+  flex-direction: row-reverse; /* Avatar on right, name capsule extends left */
+}
+
+.player-profile-avatar-outer {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #fff9f2;
+  border: 4.5px solid #cfd8dc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+  position: relative;
+  z-index: 2;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.player-profile-avatar-outer.active-turn {
+  animation: pulse-avatar 2s infinite;
+  box-shadow: 0 0 20px var(--glow-color, rgba(255,255,255,0.4));
+}
+
+.player-profile-avatar-outer.yellow-turn { border-color: var(--color-yellow); --glow-color: var(--color-yellow-glow); }
+.player-profile-avatar-outer.green-turn { border-color: var(--color-green); --glow-color: var(--color-green-glow); }
+.player-profile-avatar-outer.red-turn { border-color: var(--color-red); --glow-color: var(--color-red-glow); }
+.player-profile-avatar-outer.blue-turn { border-color: var(--color-blue); --glow-color: var(--color-blue-glow); }
+
+.player-profile-avatar-inner {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-profile-name-capsule {
+  background-color: #542711;
+  background-image: linear-gradient(to bottom, #6e3a19, #4a220f);
+  border: 3px solid #301406;
+  border-radius: 20px;
+  color: #fff9f2;
+  font-family: var(--font-main);
+  font-weight: 800;
+  font-size: 13px;
+  padding: 8px 16px;
+  box-shadow: 
+    0 6px 12px rgba(0,0,0,0.2),
+    inset 0 1px 2px rgba(255,255,255,0.1);
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.player-profile-name-capsule.yellow-banner { border-color: var(--color-yellow); box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 0 10px rgba(245, 158, 11, 0.2); }
+.player-profile-name-capsule.green-banner { border-color: var(--color-green); box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 0 10px rgba(16, 185, 129, 0.2); }
+.player-profile-name-capsule.red-banner { border-color: var(--color-red); box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 0 10px rgba(239, 68, 68, 0.2); }
+.player-profile-name-capsule.blue-banner { border-color: var(--color-blue); box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 0 10px rgba(59, 130, 246, 0.2); }
+
+/* Small Emoji Badge */
+.player-emoji-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background-color: #fff;
+  border: 2px solid #301406;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  z-index: 3;
+}
+
+.player-profile-row.right-align .player-emoji-badge {
+  left: -4px;
+  right: auto;
+}
+
+/* Inline Dice Container placement */
+.player-profile-dice-wrap {
+  position: absolute;
+  top: 96px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 4;
+  animation: fade-in 0.3s ease;
+}
+
+.player-profile-row.right-align .player-profile-dice-wrap {
+  left: auto;
+  right: 0;
+}
+
+@keyframes pulse-avatar {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive Styles for Game Layout */
+@media (max-width: 820px) {
+  .game-main-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 12px;
+  }
+  
+  .profiles-column {
+    min-height: auto;
+    height: auto;
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+  }
+  
+  .profiles-column.left-side {
+    align-items: center;
+    grid-row: 1;
+  }
+  
+  .board-center-area {
+    grid-row: 2;
+    margin: 10px 0;
+  }
+  
+  .profiles-column.right-side {
+    align-items: center;
+    grid-row: 3;
+  }
+
+  .player-profile-dice-wrap {
+    top: auto;
+    bottom: -80px;
+  }
+  
+  .profile-placeholder {
+    display: none;
+  }
+}
+
