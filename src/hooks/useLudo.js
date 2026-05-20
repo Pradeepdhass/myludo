@@ -183,6 +183,19 @@ export const useLudo = () => {
         ...updates,
         updatedAt: new Date().toISOString()
       });
+
+      // If the match has completed, delete the room document after a short 10s delay to clean up DB space
+      if (updates.gameState === 'finished') {
+        setTimeout(async () => {
+          try {
+            await firebaseService.deleteRoom(roomId);
+            console.log(`🧹 Cleaned up room ${roomId} from database.`);
+          } catch (err) {
+            console.error("Failed to delete completed room:", err);
+          }
+        }, 10000);
+      }
+
       // Small timeout to let state update fire locally before enabling listeners
       setTimeout(() => {
         syncBlocked.current = false;
@@ -814,6 +827,12 @@ export const useLudo = () => {
   };
 
   const exitToSetup = () => {
+    if (gameMode === 'online' && roomId) {
+      // Promptly clean up the database room document when returning to main menu
+      firebaseService.deleteRoom(roomId).catch(err => {
+        console.warn("Room already deleted or failed to delete on exit:", err);
+      });
+    }
     setGameState('setup');
     setRoomId(null);
     setLobbyPlayers([]);

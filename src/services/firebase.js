@@ -9,7 +9,8 @@ import {
   updateDoc, 
   onSnapshot, 
   serverTimestamp, 
-  arrayUnion
+  arrayUnion,
+  deleteDoc
 } from 'firebase/firestore';
 
 class FirebaseService {
@@ -263,6 +264,13 @@ class FirebaseService {
       ...updateData,
       updatedAt: serverTimestamp()
     });
+  }
+
+  // Delete a room from database
+  async deleteRoom(roomId) {
+    if (!this.init()) throw new Error("Firebase not initialized");
+    const roomRef = doc(this.db, 'rooms', roomId);
+    await deleteDoc(roomRef);
   }
 }
 
