@@ -1368,39 +1368,214 @@ header p {
   .game-main-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
-    gap: 12px;
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
   }
-  
+
   .profiles-column {
     min-height: auto;
     height: auto;
     flex-direction: row;
     justify-content: space-around;
+    align-items: center !important;
     width: 100%;
+    padding: 8px 0;
   }
-  
+
   .profiles-column.left-side {
-    align-items: center;
     grid-row: 1;
+    align-items: center;
   }
-  
+
   .board-center-area {
     grid-row: 2;
-    margin: 10px 0;
+    margin: 8px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .profiles-column.right-side {
+    grid-row: 3;
+    align-items: center;
+  }
+
+  /* Compact layout for profiles on mobile */
+  .player-profile-row {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+    width: 45%;
+    max-width: 140px;
+    margin: 0;
   }
   
-  .profiles-column.right-side {
-    align-items: center;
-    grid-row: 3;
+  .player-profile-row.left-align,
+  .player-profile-row.right-align {
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  .player-profile-avatar-wrapper {
+    transform: scale(0.85);
+    margin: -6px 0;
+  }
+
+  .player-profile-info-col {
+    align-items: center !important;
+    width: 100%;
+    gap: 4px !important;
+  }
+
+  .player-profile-name-capsule {
+    padding: 4px 8px;
+    font-size: 11px;
+    max-width: 100px;
+    text-align: center;
+    border-radius: 12px;
   }
 
   .player-profile-dice-wrap {
-    top: auto;
-    bottom: -80px;
+    margin-top: 2px;
+    position: static !important;
   }
-  
+
   .profile-placeholder {
     display: none;
+  }
+}
+
+/* For Mobile Phones (max-width: 600px) */
+@media (max-width: 600px) {
+  .app-container {
+    padding: 10px 6px;
+  }
+
+  header {
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 26px;
+    gap: 8px;
+  }
+
+  header p {
+    font-size: 11px;
+  }
+
+  .board-wrapper {
+    padding: 8px !important;
+    border-width: 3px !important;
+    border-radius: 12px !important;
+  }
+
+  .board-container {
+    width: min(480px, 92vw) !important;
+    height: min(480px, 92vw) !important;
+    border-width: 3px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .wood-corner {
+    width: 26px !important;
+    height: 26px !important;
+    border-width: 2px !important;
+  }
+
+  .wood-corner.top-left { top: -2px; left: -2px; }
+  .wood-corner.top-right { top: -2px; right: -2px; }
+  .wood-corner.bottom-left { bottom: -2px; left: -2px; }
+  .wood-corner.bottom-right { bottom: -2px; right: -2px; }
+
+  /* Bouncing arrow sizes down on small screens */
+  .playable-arrow-indicator {
+    top: -24px;
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Modals are padded compactly */
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal-content {
+    padding: 20px !important;
+    border-radius: 20px !important;
+  }
+
+  .modal-content h2 {
+    font-size: 22px;
+  }
+
+  /* Premium dice inside player profiles */
+  .premium-dice-container {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    padding: 3px;
+  }
+
+  .premium-dice-dots {
+    width: 32px;
+    height: 32px;
+  }
+
+  .dice-dot {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .dice-dots-grid {
+    padding: 3px !important;
+  }
+  
+  .dice-roll-icon-svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}
+
+/* Ultra small viewports (max-width: 380px) */
+@media (max-width: 380px) {
+  .player-profile-name-capsule {
+    font-size: 9.5px;
+    padding: 3px 6px;
+    max-width: 80px;
+  }
+
+  .player-profile-avatar-wrapper {
+    transform: scale(0.72);
+    margin: -12px 0;
+  }
+
+  .premium-dice-container {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+  
+  .premium-dice-dots {
+    width: 26px;
+    height: 26px;
+  }
+
+  .dice-dot {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .dice-dots-grid {
+    padding: 2px !important;
+  }
+  
+  .dice-roll-icon-svg {
+    width: 18px !important;
+    height: 18px !important;
   }
 }
 
@@ -1601,6 +1776,49 @@ header p {
   100% {
     transform: translateX(-50%) translateY(-6px);
   }
+}
+
+/* Gold Wallet Glow Animation */
+@keyframes gold-glow {
+  0%, 100% {
+    text-shadow: 0 0 4px rgba(230, 161, 0, 0.4);
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(230, 161, 0, 0.8), 0 0 20px rgba(255, 224, 102, 0.6);
+  }
+}
+
+.coin-glow {
+  animation: gold-glow 2s infinite ease-in-out;
+  font-weight: 900;
+}
+
+/* Local Player slots colors */
+.local-player-slot.slot-yellow.active {
+  border-color: var(--color-yellow) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 0 10px rgba(255, 211, 42, 0.3) !important;
+}
+.local-player-slot.slot-green.active {
+  border-color: var(--color-green) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 0 10px rgba(5, 196, 107, 0.3) !important;
+}
+.local-player-slot.slot-red.active {
+  border-color: var(--color-red) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 0 10px rgba(255, 94, 87, 0.3) !important;
+}
+.local-player-slot.slot-blue.active {
+  border-color: var(--color-blue) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 0 10px rgba(60, 64, 198, 0.3) !important;
+}
+
+/* Custom bounce for claim coin emoji */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.fee-badge {
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
 }
 
 

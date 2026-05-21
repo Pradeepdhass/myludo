@@ -37,7 +37,11 @@ function App() {
     exitToSetup,
     getValidMoves,
     turnTimer,
-    MAX_TURN_TIME
+    MAX_TURN_TIME,
+    coins,
+    addCoins,
+    lastWinnings,
+    getPrizePool
   } = useLudo();
 
 
@@ -257,6 +261,10 @@ function App() {
           lobbyPlayers={lobbyPlayers}
           gameState={gameState}
           myPlayerId={myPlayerId}
+          coins={coins}
+          addCoins={addCoins}
+          lastWinnings={lastWinnings}
+          getPrizePool={getPrizePool}
         />
       ) : gameState === 'lobby' && roomId ? (
         // Lobby waiting for start
@@ -271,24 +279,49 @@ function App() {
             lobbyPlayers={lobbyPlayers}
             gameState={gameState}
             myPlayerId={myPlayerId}
+            coins={coins}
+            addCoins={addCoins}
+            lastWinnings={lastWinnings}
+            getPrizePool={getPrizePool}
           />
         </div>
       ) : (
         // Active Match Layout (Playing or Finished)
         <div className="game-screen-container">
-          {/* Top Bar: Back & Sound */}
-          <div className="game-top-bar">
-            <button 
-              className="btn-3d btn-3d-cyan square-btn" 
-              onClick={() => {
-                if (window.confirm("Are you sure you want to exit the current match? Your progress will be lost.")) {
-                  exitToSetup();
-                }
-              }}
-              title="Exit Game"
-            >
-              <ArrowLeft size={24} strokeWidth={3} />
-            </button>
+          {/* Top Bar: Back, Wallet & Sound */}
+          <div className="game-top-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button 
+                className="btn-3d btn-3d-cyan square-btn" 
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to exit the current match? Your progress will be lost.")) {
+                    exitToSetup();
+                  }
+                }}
+                title="Exit Game"
+              >
+                <ArrowLeft size={24} strokeWidth={3} />
+              </button>
+
+              <div className="game-wallet-pill" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(10px)',
+                padding: '6px 14px',
+                borderRadius: '16px',
+                border: '2px solid rgba(255,255,255,0.15)',
+                color: '#ffffff',
+                fontWeight: '800',
+                fontSize: '14px',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.15)'
+              }}>
+                <span>🪙</span>
+                <span className="coin-glow" style={{ color: '#ffe066' }}>{coins.toLocaleString()}</span>
+              </div>
+            </div>
+
             <button 
               className="btn-3d btn-3d-cyan square-btn" 
               onClick={toggleMute}
@@ -352,6 +385,34 @@ function App() {
           <div className="modal-content glass-panel" style={{ padding: '40px' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏆</div>
             <h2>Match Completed!</h2>
+            
+            {/* Coin reward panel */}
+            {lastWinnings > 0 ? (
+              <div className="victory-reward-card" style={{
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%)',
+                border: '2px solid #f59e0b',
+                borderRadius: '16px',
+                padding: '16px',
+                marginBottom: '20px',
+                textAlign: 'center',
+                boxShadow: '0 8px 24px rgba(245,158,11,0.2)'
+              }}>
+                <div style={{ fontSize: '20px', fontWeight: '800', marginBottom: '4px' }}>💰 Reward Earned!</div>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: '#fbbf24' }}>+🪙 {lastWinnings.toLocaleString()} Gold Coins</div>
+              </div>
+            ) : (
+              <div className="victory-reward-card" style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '2px solid rgba(255,255,255,0.1)',
+                borderRadius: '16px',
+                padding: '16px',
+                marginBottom: '20px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>Better luck next time!</div>
+              </div>
+            )}
+
             <p>Here is the final standings leaderboard:</p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '24px 0', textAlign: 'left' }}>

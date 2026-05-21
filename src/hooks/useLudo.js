@@ -113,6 +113,36 @@ export const useLudo = () => {
 
   const syncBlocked = useRef(false);
 
+  // --- Coin Wallet & Auto-Move States ---
+  const [coins, setCoins] = useState(() => {
+    const stored = localStorage.getItem('ludo_coins');
+    return stored !== null ? parseInt(stored, 10) : 2500;
+  });
+  const [lastWinnings, setLastWinnings] = useState(0);
+  const autoMoveTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    localStorage.setItem('ludo_coins', coins.toString());
+  }, [coins]);
+
+  const addCoins = useCallback((amount) => {
+    setCoins(prev => prev + amount);
+  }, []);
+
+  const getPrizePool = useCallback(() => {
+    const activeCount = COLORS.filter(c => players[c]?.active).length;
+    if (gameMode === 'ai') {
+      return activeCount * 100;
+    }
+    if (gameMode === 'local') {
+      return activeCount * 200;
+    }
+    if (gameMode === 'online') {
+      return lobbyPlayers.length * 500;
+    }
+    return 0;
+  }, [gameMode, players, lobbyPlayers]);
+
   const addLog = useCallback((text) => {
     setLogs((prev) => [{ time: new Date().toLocaleTimeString(), text }, ...prev.slice(0, 49)]);
   }, []);
@@ -167,7 +197,7 @@ export const useLudo = () => {
       const player = currentPlayers[nextColor];
       
       // Player must be active, and not already in the finished list
-      if (player.active && !currentWinners.includes(nextColor)) {
+      if (player && player.active && !currentWinners.includes(nextColor)) {
         return nextColor;
       }
     }
@@ -189,7 +219,7 @@ export const useLudo = () => {
         setTimeout(async () => {
           try {
             await firebaseService.deleteRoom(roomId);
-            console.log(`🧹 Cleaned up room ${roomId} from database.`);
+            console.log(`\uD83E\uDDF9 Cleaned up room ${roomId} from database.`);
           } catch (err) {
             console.error("Failed to delete completed room:", err);
           }
@@ -210,6 +240,11 @@ export const useLudo = () => {
   const executeMove = useCallback(async (tokenColor, tokenIdx, roll) => {
     if (isMoving) return;
     setIsMoving(true);
+
+    if (autoMoveTimeoutRef.current) {
+      clearTimeout(autoMoveTimeoutRef.current);
+      autoMoveTimeoutRef.current = null;
+    }
 
     const startPos = positions[tokenColor][tokenIdx];
     let endPos = startPos === -1 ? 0 : startPos + roll;
@@ -299,6 +334,22 @@ export const useLudo = () => {
         setFinishedPlayers(updatedWinners);
         addLog(`🏆 ${players[tokenColor].name} has FINISHED all tokens!`);
         audio.playVictory();
+
+        // 1st place winner gets the prize pool!
+        if (updatedWinners.length === 1) {
+          const isLocalWinner = (gameMode === 'local') || (tokenColor === myColor);
+          if (isLocalWinner) {
+            const activeCount = COLORS.filter(c => players[c]?.active).length;
+            let pool = 0;
+            if (gameMode === 'ai') pool = activeCount * 100;
+            else if (gameMode === 'local') pool = activeCount * 200;
+            else if (gameMode === 'online') pool = lobbyPlayers.length * 500;
+            
+            setCoins(prev => prev + pool);
+            setLastWinnings(pool);
+            addLog(`💰 You earned ${pool} coins from the prize pool!`);
+          }
+        }
       }
 
       // Check if game is completely finished
@@ -355,10 +406,10 @@ export const useLudo = () => {
       return nextPositions;
     });
 
-  }, [positions, turn, rolledSixCount, finishedPlayers, players, gameMode, roomId, isMoving, gameState, checkPlayerFinished, getNextTurn, syncToFirebase, addLog]);
+  }, [positions, turn, rolledSixCount, finishedPlayers, players, gameMode, roomId, isMoving, gameState, checkPlayerFinished, getNextTurn, syncToFirebase, addLog, myColor, lobbyPlayers]);
 
   // Roll dice action
-  const rollDice = useCallback(() => {
+  const rollDice = useCallback((isTimeout = false) => {
     if (gameState !== 'playing' || diceState !== 'idle' || hasPendingMove || isMoving) return;
     
     // In online mode, only current player can roll
@@ -444,26 +495,45 @@ export const useLudo = () => {
           }
         }, 1500);
       } else {
-        setHasPendingMove(true);
-        
-        if (gameMode === 'online') {
-          syncToFirebase({
-            diceState: 'rolled',
-            diceValue: roll,
-            rolledSixCount: newSixCount,
-            hasPendingMove: true,
-            lastAction: {
-              type: 'roll',
-              player: turn,
-              timestamp: new Date().toISOString(),
-              summary: `${players[turn].name} rolled a ${roll}`
+        if (isTimeout) {
+          // Timeout auto-roll: automatically move the first valid token immediately
+          const chosenTokenIdx = moves[0];
+          addLog(`🤖 Timeout auto-move: Token ${chosenTokenIdx + 1}`);
+          executeMove(turn, chosenTokenIdx, roll);
+        } else {
+          // Check if there is exactly 1 valid move and it's a human's turn. If so, auto-move it!
+          const isHumanTurn = gameMode !== 'online' ? !players[turn]?.isAI : turn === myColor;
+          if (isHumanTurn && moves.length === 1) {
+            setHasPendingMove(true);
+            const chosenTokenIdx = moves[0];
+            addLog(`⚡ Auto-moving the only valid token (${chosenTokenIdx + 1})`);
+            
+            autoMoveTimeoutRef.current = setTimeout(() => {
+              executeMove(turn, chosenTokenIdx, roll);
+            }, 1000);
+          } else {
+            setHasPendingMove(true);
+            
+            if (gameMode === 'online') {
+              syncToFirebase({
+                diceState: 'rolled',
+                diceValue: roll,
+                rolledSixCount: newSixCount,
+                hasPendingMove: true,
+                lastAction: {
+                  type: 'roll',
+                  player: turn,
+                  timestamp: new Date().toISOString(),
+                  summary: `${players[turn].name} rolled a ${roll}`
+                }
+              });
             }
-          });
+          }
         }
       }
     }, 800);
 
-  }, [gameState, diceState, hasPendingMove, isMoving, gameMode, turn, myColor, rolledSixCount, players, finishedPlayers, getNextTurn, getValidMoves, positions, syncToFirebase, addLog]);
+  }, [gameState, diceState, hasPendingMove, isMoving, gameMode, turn, myColor, rolledSixCount, players, finishedPlayers, getNextTurn, getValidMoves, positions, syncToFirebase, addLog, executeMove]);
 
   // AI Moves decision engine
   const executeAIMove = useCallback(() => {
@@ -589,12 +659,12 @@ export const useLudo = () => {
     addLog(`⏰ Time's up for ${activePlayer.name}!`);
 
     if (diceState === 'idle') {
-      rollDice();
+      rollDice(true); // Pass isTimeout = true
     } else if (diceState === 'rolled' && hasPendingMove) {
       const validMoves = getValidMoves(turn, diceValue, positions);
       if (validMoves.length > 0) {
         const chosenTokenIdx = validMoves[0];
-        addLog(`🤖 Auto-moving token ${chosenTokenIdx + 1}`);
+        addLog(`🤖 Timeout auto-move: Token ${chosenTokenIdx + 1}`);
         executeMove(turn, chosenTokenIdx, diceValue);
       } else {
         const nextTurnColor = getNextTurn(turn, players, finishedPlayers);
@@ -699,7 +769,12 @@ export const useLudo = () => {
 
   // Setup options
   const configureLocalGame = (configuredPlayers) => {
-    // configuredPlayers: { yellow: { active: true, name: 'Alice' }, ... }
+    if (coins < 200) {
+      throw new Error("Insufficient coins! Entry fee is 200 coins.");
+    }
+    setCoins(prev => prev - 200);
+    setLastWinnings(0);
+
     const mapped = {};
     COLORS.forEach(c => {
       mapped[c] = {
@@ -721,6 +796,12 @@ export const useLudo = () => {
   };
 
   const configureAIGame = (playerName, playerColor, computerCount) => {
+    if (coins < 100) {
+      throw new Error("Insufficient coins! Entry fee is 100 coins.");
+    }
+    setCoins(prev => prev - 100);
+    setLastWinnings(0);
+
     const mapped = {
       yellow: { name: 'Empty', active: false, isAI: false },
       green: { name: 'Empty', active: false, isAI: false },
@@ -756,6 +837,12 @@ export const useLudo = () => {
   };
 
   const createOnlineRoom = async (roomIdInput, playerName, playerColor) => {
+    if (coins < 500) {
+      throw new Error("Insufficient coins! Entry fee is 500 coins.");
+    }
+    setCoins(prev => prev - 500);
+    setLastWinnings(0);
+
     try {
       const id = roomIdInput.trim().toUpperCase();
       if (!id) throw new Error("Room ID cannot be empty");
@@ -774,12 +861,19 @@ export const useLudo = () => {
       setGameState('lobby');
       addLog(`Room ${id} created. Share code to invite friends!`);
     } catch (e) {
+      setCoins(prev => prev + 500); // Refund
       addLog(`⚠️ Lobby creation failed: ${e.message}`);
       throw e;
     }
   };
 
   const joinOnlineRoom = async (roomIdInput, playerName, playerColor) => {
+    if (coins < 500) {
+      throw new Error("Insufficient coins! Entry fee is 500 coins.");
+    }
+    setCoins(prev => prev - 500);
+    setLastWinnings(0);
+
     try {
       const id = roomIdInput.trim().toUpperCase();
       if (!id) throw new Error("Room ID cannot be empty");
@@ -798,6 +892,7 @@ export const useLudo = () => {
       setGameState('lobby');
       addLog(`Joined room ${id}! Waiting for host to start...`);
     } catch (e) {
+      setCoins(prev => prev + 500); // Refund
       addLog(`⚠️ Lobby join failed: ${e.message}`);
       throw e;
     }
@@ -828,6 +923,11 @@ export const useLudo = () => {
 
   const exitToSetup = () => {
     if (gameMode === 'online' && roomId) {
+      // If we exit from lobby, refund the entry fee
+      if (gameState === 'lobby') {
+        setCoins(prev => prev + 500);
+        addLog("Refunded 500 coins for exiting room.");
+      }
       // Promptly clean up the database room document when returning to main menu
       firebaseService.deleteRoom(roomId).catch(err => {
         console.warn("Room already deleted or failed to delete on exit:", err);
@@ -869,6 +969,10 @@ export const useLudo = () => {
     addLog,
     getValidMoves,
     turnTimer,
-    MAX_TURN_TIME
+    MAX_TURN_TIME,
+    coins,
+    addCoins,
+    lastWinnings,
+    getPrizePool
   };
 };

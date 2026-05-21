@@ -104,14 +104,42 @@ export const Lobby = ({
   roomId,
   lobbyPlayers,
   gameState,
-  myPlayerId
+  myPlayerId,
+  configureLocalGame,
+  configureAIGame,
+  coins = 2500,
+  addCoins,
+  lastWinnings = 0,
+  getPrizePool
 }) => {
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('ludo_player_name') || 'Player');
   const [playerColor, setPlayerColor] = useState('random');
   const [roomInput, setRoomInput] = useState('');
-  const [activeTab, setActiveTab] = useState('invite'); // 'invite' or 'join'
+  const [activeTab, setActiveTab] = useState('invite'); // 'invite' or 'join' for Online mode
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState('');
+
+  // New states for AI & Local setup
+  const [gameModeTab, setGameModeTab] = useState(() => {
+    if (roomId) return 'online';
+    return 'ai';
+  });
+  const [aiOpponents, setAiOpponents] = useState(3);
+  const [localPlayers, setLocalPlayers] = useState({
+    yellow: { name: 'Player 1', active: true },
+    green: { name: 'Player 2', active: true },
+    red: { name: 'Player 3', active: false },
+    blue: { name: 'Player 4', active: false }
+  });
+  const [insufficientModal, setInsufficientModal] = useState({ show: false, mode: '', fee: 0 });
+  const [showBurst, setShowBurst] = useState(false);
+
+  // Sync gameModeTab if roomId becomes active
+  useEffect(() => {
+    if (roomId) {
+      setGameModeTab('online');
+    }
+  }, [roomId]);
 
   // Handle URL parameter prefilling
   useEffect(() => {
@@ -120,6 +148,7 @@ export const Lobby = ({
     if (roomParam) {
       setRoomInput(roomParam);
       setActiveTab('join');
+      setGameModeTab('online');
     }
   }, []);
 
@@ -127,17 +156,52 @@ export const Lobby = ({
     localStorage.setItem('ludo_player_name', playerName);
   }, [playerName]);
 
-  // Lock tab to Invite when connected to an online room
   const currentTab = roomId ? 'invite' : activeTab;
 
   const generateRandomRoomId = () => {
     return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
+  const handleStartAIGame = () => {
+    setLocalError('');
+    if (!playerName.trim()) {
+      setLocalError("Please enter your name first!");
+      return;
+    }
+    if (coins < 100) {
+      setInsufficientModal({ show: true, mode: 'VS AI', fee: 100 });
+      return;
+    }
+    let resolvedColor = playerColor;
+    if (resolvedColor === 'random') {
+      const colors = ['yellow', 'green', 'red', 'blue'];
+      resolvedColor = colors[Math.floor(Math.random() * colors.length)];
+    }
+    configureAIGame(playerName, resolvedColor, aiOpponents);
+  };
+
+  const handleStartLocalGame = () => {
+    setLocalError('');
+    const activeCount = Object.values(localPlayers).filter(p => p.active).length;
+    if (activeCount < 2) {
+      setLocalError("Pass & Play requires at least 2 active players!");
+      return;
+    }
+    if (coins < 200) {
+      setInsufficientModal({ show: true, mode: 'Pass & Play', fee: 200 });
+      return;
+    }
+    configureLocalGame(localPlayers);
+  };
+
   const handleCreateOnline = async () => {
     setLocalError('');
     if (!playerName.trim()) {
       setLocalError("Please enter your name first!");
+      return;
+    }
+    if (coins < 500) {
+      setInsufficientModal({ show: true, mode: 'Play Online (Create Room)', fee: 500 });
       return;
     }
     
@@ -169,6 +233,10 @@ export const Lobby = ({
       setLocalError("Please enter a valid 4-digit room ID!");
       return;
     }
+    if (coins < 500) {
+      setInsufficientModal({ show: true, mode: 'Play Online (Join Room)', fee: 500 });
+      return;
+    }
     
     setLoading(true);
     try {
@@ -178,6 +246,32 @@ export const Lobby = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleToggleLocalPlayer = (color) => {
+    const activeCount = Object.values(localPlayers).filter(p => p.active).length;
+    if (localPlayers[color].active && activeCount <= 2) {
+      setLocalError("A local match requires at least 2 active players!");
+      return;
+    }
+    setLocalError('');
+    setLocalPlayers(prev => ({
+      ...prev,
+      [color]: { ...prev[color], active: !prev[color].active }
+    }));
+  };
+
+  const handleLocalPlayerNameChange = (color, name) => {
+    setLocalPlayers(prev => ({
+      ...prev,
+      [color]: { ...prev[color], name }
+    }));
+  };
+
+  const handleClaimCoins = () => {
+    addCoins(1000);
+    setShowBurst(true);
+    setInsufficientModal({ show: false, mode: '', fee: 0 });
   };
 
   const handleShare = () => {
@@ -231,49 +325,315 @@ export const Lobby = ({
     );
   };
 
-  // Determine if local player is host
+  const renderLocalPlayersSetup = () => {
+    const colors = ['yellow', 'green', 'red', 'blue'];
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <p style={{ fontSize: '13px', color: '#8c4e20', textAlign: 'center', fontWeight: '800', textTransform: 'uppercase' }}>
+          Configure Local Players
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {colors.map(color => {
+            const isPlayerActive = localPlayers[color].active;
+            return (
+              <div
+                key={color}
+                className={`local-player-slot slot-${color} ${isPlayerActive ? 'active' : 'inactive'}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '8px 14px',
+                  borderRadius: '18px',
+                  border: '3px solid #4a220f',
+                  backgroundColor: isPlayerActive ? '#ffffff' : 'rgba(74, 34, 15, 0.05)',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isPlayerActive ? 'inset 0 2px 4px rgba(0,0,0,0.05), 0 4px 6px rgba(0,0,0,0.1)' : 'none'
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id={`local-active-${color}`}
+                  checked={isPlayerActive}
+                  onChange={() => handleToggleLocalPlayer(color)}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    cursor: 'pointer',
+                    accentColor: `var(--color-${color})`
+                  }}
+                />
+                
+                <div style={{ width: '32px', height: '32px' }}>
+                  {renderAvatarSvg(color)}
+                </div>
+
+                <input
+                  type="text"
+                  id={`local-name-${color}`}
+                  value={localPlayers[color].name}
+                  disabled={!isPlayerActive}
+                  onChange={(e) => handleLocalPlayerNameChange(color, e.target.value)}
+                  placeholder={`${color.charAt(0).toUpperCase() + color.slice(1)} Player`}
+                  maxLength={12}
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    borderBottom: isPlayerActive ? `2px solid var(--color-${color})` : '2px solid transparent',
+                    background: 'transparent',
+                    color: isPlayerActive ? '#4a220f' : '#a0a0a0',
+                    fontWeight: '800',
+                    fontSize: '14px',
+                    padding: '4px 8px',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="fee-badge" style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '6px',
+          fontWeight: '800',
+          color: '#8c4e20',
+          fontSize: '14px',
+          marginTop: '10px'
+        }}>
+          Entry Fee: <span className="coin-glow" style={{ color: '#e6a100' }}>🪙 200 Gold</span>
+        </div>
+
+        <button
+          className="btn-3d btn-3d-green"
+          style={{ width: '100%', height: '48px', marginTop: '4px' }}
+          onClick={handleStartLocalGame}
+        >
+          <Play size={16} fill="#ffffff" /> PLAY PASS & PLAY
+        </button>
+      </div>
+    );
+  };
+
+  const renderAISetup = () => {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '6px', textTransform: 'uppercase' }}>Your Name</label>
+          <input
+            type="text"
+            className="capsule-input-container"
+            style={{
+              backgroundColor: '#ffffff',
+              border: '3px solid #4a220f',
+              borderRadius: '20px',
+              color: '#4a220f',
+              fontWeight: '700',
+              padding: '12px 18px',
+              width: '100%',
+              outline: 'none'
+            }}
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            placeholder="Enter Username"
+            maxLength={12}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '6px', textTransform: 'uppercase' }}>Your Color</label>
+            <select
+              style={{
+                backgroundColor: '#ffffff',
+                border: '3px solid #4a220f',
+                borderRadius: '20px',
+                color: '#4a220f',
+                fontWeight: '700',
+                padding: '12px 18px',
+                width: '100%',
+                outline: 'none',
+                textTransform: 'capitalize',
+                cursor: 'pointer'
+              }}
+              value={playerColor}
+              onChange={(e) => setPlayerColor(e.target.value)}
+            >
+              <option value="random">🎲 Random Color</option>
+              <option value="yellow">Yellow</option>
+              <option value="green">Green</option>
+              <option value="red">Red</option>
+              <option value="blue">Blue</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '6px', textTransform: 'uppercase' }}>Opponents</label>
+            <select
+              style={{
+                backgroundColor: '#ffffff',
+                border: '3px solid #4a220f',
+                borderRadius: '20px',
+                color: '#4a220f',
+                fontWeight: '700',
+                padding: '12px 18px',
+                width: '100%',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+              value={aiOpponents}
+              onChange={(e) => setAiOpponents(parseInt(e.target.value, 10))}
+            >
+              <option value={1}>1 Computer</option>
+              <option value={2}>2 Computers</option>
+              <option value={3}>3 Computers</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="fee-badge" style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '6px',
+          fontWeight: '800',
+          color: '#8c4e20',
+          fontSize: '14px',
+          marginTop: '10px'
+        }}>
+          Entry Fee: <span className="coin-glow" style={{ color: '#e6a100' }}>🪙 100 Gold</span>
+        </div>
+
+        <button
+          className="btn-3d btn-3d-yellow"
+          style={{ width: '100%', height: '48px', marginTop: '4px' }}
+          onClick={handleStartAIGame}
+        >
+          <Play size={16} fill="#ffffff" /> PLAY VS COMPUTER
+        </button>
+      </div>
+    );
+  };
+
+  const renderInsufficientModal = () => {
+    if (!insufficientModal.show) return null;
+    return (
+      <div className="modal-overlay" style={{ zIndex: 10000 }}>
+        <div className="modal-content glass-panel" style={{
+          padding: '30px',
+          maxWidth: '360px',
+          border: '4px solid #4a220f',
+          background: 'linear-gradient(to bottom, #fdf1e1 0%, #edd3b8 100%)',
+          color: '#4a220f',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'bounce 2s infinite' }}>🪙</div>
+          <h2 style={{ color: '#4a220f', fontSize: '22px', fontWeight: '800', marginBottom: '12px' }}>Insufficient Coins!</h2>
+          <p style={{ fontSize: '14px', color: '#8c4e20', fontWeight: '600', lineHeight: '1.5', marginBottom: '24px' }}>
+            Starting a <strong style={{ color: '#4a220f' }}>{insufficientModal.mode}</strong> match requires <strong style={{ color: '#4a220f' }}>{insufficientModal.fee}</strong> coins.<br />
+            You currently have <strong style={{ color: '#d28c00' }}>{coins}</strong> coins.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              className="btn-3d btn-3d-green"
+              style={{ width: '100%', height: '48px', fontSize: '15px' }}
+              onClick={handleClaimCoins}
+            >
+              🎉 CLAIM 1,000 COINS!
+            </button>
+            <button
+              className="btn-3d btn-3d-cyan"
+              style={{ width: '100%', height: '44px', fontSize: '14px' }}
+              onClick={() => setInsufficientModal({ show: false, mode: '', fee: 0 })}
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const localPlayerObj = lobbyPlayers.find(p => p.id === myPlayerId);
   const isHost = localPlayerObj ? localPlayerObj.isHost : false;
 
   return (
     <div style={{ maxWidth: '420px', width: '100%', margin: '0 auto', padding: '10px' }}>
+      {showBurst && <CoinBurst onComplete={() => setShowBurst(false)} />}
+      {renderInsufficientModal()}
+      
       <div className="wooden-plaque">
-        {/* Play with Friends banner plate */}
         <div className="wooden-banner">
-          <h2>Play With Friends</h2>
+          <h2>{roomId ? 'Room Lobby' : 'Ludo Pro Setup'}</h2>
         </div>
 
-        {/* Tab Selection */}
-        <div className="wooden-tab-bar">
-          <button
-            className={`wooden-tab ${currentTab === 'invite' ? 'active' : ''}`}
-            disabled={!!roomId}
-            onClick={() => setActiveTab('invite')}
-          >
-            Invite
-          </button>
-          <button
-            className={`wooden-tab ${currentTab === 'join' ? 'active' : ''}`}
-            disabled={!!roomId}
-            onClick={() => setActiveTab('join')}
-          >
-            Join
-          </button>
-        </div>
+        {/* Main Mode Selection Tab Bar */}
+        {!roomId && (
+          <div className="wooden-tab-bar mode-tabs" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+            <button
+              className={`wooden-tab ${gameModeTab === 'ai' ? 'active' : ''}`}
+              onClick={() => { setGameModeTab('ai'); setLocalError(''); }}
+            >
+              VS AI
+            </button>
+            <button
+              className={`wooden-tab ${gameModeTab === 'local' ? 'active' : ''}`}
+              onClick={() => { setGameModeTab('local'); setLocalError(''); }}
+            >
+              Local
+            </button>
+            <button
+              className={`wooden-tab ${gameModeTab === 'online' ? 'active' : ''}`}
+              onClick={() => { setGameModeTab('online'); setLocalError(''); }}
+            >
+              Online
+            </button>
+          </div>
+        )}
 
-        {/* Beige Board Contents */}
-        <div className="wooden-card">
+        <div className="wooden-card" style={{ borderRadius: roomId ? '0 0 20px 20px' : '0 0 20px 20px' }}>
+          
+          {/* Wallet Widget inside Card */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px',
+            background: 'rgba(74, 34, 15, 0.05)',
+            padding: '10px 14px',
+            borderRadius: '16px',
+            border: '2px solid rgba(74,34,15,0.08)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '20px' }}>🪙</span>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#4a220f', letterSpacing: '0.5px' }}>GOLD WALLET</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="coin-glow" style={{ fontSize: '16px', fontWeight: '800', color: '#d28c00' }}>{coins.toLocaleString()}</span>
+              <button
+                className="btn-3d btn-3d-cyan"
+                style={{ width: '28px', height: '28px', fontSize: '16px', padding: '0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => { addCoins(1000); setShowBurst(true); }}
+                title="Claim 1,000 Free Coins"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
           {localError && (
             <div style={{ background: '#ffdddd', border: '2px solid #ff5e57', color: '#b33939', padding: '10px 14px', borderRadius: '12px', fontSize: '13px', marginBottom: '16px', fontWeight: 'bold', textAlign: 'center' }}>
               ⚠️ {localError}
             </div>
           )}
 
-          {/* Connected Lobby Waiting Room */}
+          {/* Lobby Waiting Room for Online Active Match */}
           {roomId ? (
             <div>
               {lobbyPlayers.length <= 1 ? (
-                // 1 Player: Show standard instructions
                 <div className="invite-instructions-box">
                   <div className="invite-instruction-row">
                     <div className="instruction-num">1</div>
@@ -289,11 +649,9 @@ export const Lobby = ({
                   </div>
                 </div>
               ) : (
-                // 2+ Players: Show Grid Slots representation
                 renderSlotsGrid()
               )}
 
-              {/* Room ID and Share Button row */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px', marginTop: '16px', alignItems: 'center' }}>
                 <div className="capsule-room-box">
                   <span style={{ fontSize: '11px', fontWeight: '800', color: '#8c4e20', letterSpacing: '0.5px' }}>ROOM ID</span>
@@ -309,7 +667,6 @@ export const Lobby = ({
                 </button>
               </div>
 
-              {/* Host Start / Guest Waiting controls */}
               <div style={{ marginTop: '24px', textAlign: 'center' }}>
                 {isHost ? (
                   <>
@@ -334,104 +691,234 @@ export const Lobby = ({
               </div>
             </div>
           ) : (
-            /* Setup forms (Create / Join options) */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '6px', textTransform: 'uppercase' }}>Your Name</label>
-                <input
-                  type="text"
-                  className="capsule-input-container"
-                  style={{
-                    backgroundColor: '#ffffff',
-                    border: '3px solid #4a220f',
-                    borderRadius: '20px',
-                    color: '#4a220f',
-                    fontWeight: '700',
-                    padding: '12px 18px',
-                    width: '100%',
-                    outline: 'none'
-                  }}
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Enter Username"
-                  maxLength={12}
-                />
-              </div>
+            /* Subcard view depending on selected Game Mode */
+            <div>
+              {gameModeTab === 'ai' && renderAISetup()}
+              
+              {gameModeTab === 'local' && renderLocalPlayersSetup()}
 
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '6px', textTransform: 'uppercase' }}>Preferred Color</label>
-                <select
-                  style={{
-                    backgroundColor: '#ffffff',
-                    border: '3px solid #4a220f',
-                    borderRadius: '20px',
-                    color: '#4a220f',
-                    fontWeight: '700',
-                    padding: '12px 18px',
-                    width: '100%',
-                    outline: 'none',
-                    textTransform: 'capitalize',
-                    cursor: 'pointer'
-                  }}
-                  value={playerColor}
-                  onChange={(e) => setPlayerColor(e.target.value)}
-                >
-                  <option value="random">🎲 Random Color</option>
-                  <option value="yellow">Yellow</option>
-                  <option value="green">Green</option>
-                  <option value="red">Red</option>
-                  <option value="blue">Blue</option>
-                </select>
-              </div>
-
-              <hr style={{ border: '0', borderTop: '2px dashed rgba(74,34,15,0.15)', margin: '4px 0' }} />
-
-              {activeTab === 'invite' ? (
-                /* Host View setup */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <p style={{ fontSize: '13px', color: '#8c4e20', textAlign: 'center', margin: '0 0 4px 0', fontWeight: '600' }}>
-                    Create a new room and invite your friends!
-                  </p>
-                  <button
-                    className="btn-3d btn-3d-yellow"
-                    style={{ width: '100%', height: '48px' }}
-                    disabled={loading}
-                    onClick={handleCreateOnline}
-                  >
-                    <Plus size={16} strokeWidth={3} /> CREATE ROOM
-                  </button>
-                </div>
-              ) : (
-                /* Join View setup */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <p style={{ fontSize: '13px', color: '#8c4e20', textAlign: 'center', margin: '0 0 4px 0', fontWeight: '600' }}>
-                    ENTER THE ROOM ID TO PLAY WITH YOUR FRIENDS
-                  </p>
-                  <div className="capsule-input-container">
-                    <input
-                      type="text"
-                      placeholder="ENTER THE ROOM ID HERE..."
-                      value={roomInput}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/[^0-9]/g, '');
-                        if (val.length <= 4) setRoomInput(val);
-                      }}
-                    />
+              {gameModeTab === 'online' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Tab Selection */}
+                  <div className="wooden-tab-bar" style={{ marginBottom: '8px' }}>
                     <button
-                      className="capsule-input-arrow-btn"
-                      disabled={loading}
-                      onClick={handleJoinOnline}
-                      title="Join Room"
+                      className={`wooden-tab ${currentTab === 'invite' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('invite')}
                     >
-                      <ArrowRight size={20} strokeWidth={3} />
+                      Invite
+                    </button>
+                    <button
+                      className={`wooden-tab ${currentTab === 'join' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('join')}
+                    >
+                      Join
                     </button>
                   </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '6px', textTransform: 'uppercase' }}>Your Name</label>
+                    <input
+                      type="text"
+                      className="capsule-input-container"
+                      style={{
+                        backgroundColor: '#ffffff',
+                        border: '3px solid #4a220f',
+                        borderRadius: '20px',
+                        color: '#4a220f',
+                        fontWeight: '700',
+                        padding: '12px 18px',
+                        width: '100%',
+                        outline: 'none'
+                      }}
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="Enter Username"
+                      maxLength={12}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#8c4e20', marginBottom: '6px', textTransform: 'uppercase' }}>Preferred Color</label>
+                    <select
+                      style={{
+                        backgroundColor: '#ffffff',
+                        border: '3px solid #4a220f',
+                        borderRadius: '20px',
+                        color: '#4a220f',
+                        fontWeight: '700',
+                        padding: '12px 18px',
+                        width: '100%',
+                        outline: 'none',
+                        textTransform: 'capitalize',
+                        cursor: 'pointer'
+                      }}
+                      value={playerColor}
+                      onChange={(e) => setPlayerColor(e.target.value)}
+                    >
+                      <option value="random">🎲 Random Color</option>
+                      <option value="yellow">Yellow</option>
+                      <option value="green">Green</option>
+                      <option value="red">Red</option>
+                      <option value="blue">Blue</option>
+                    </select>
+                  </div>
+
+                  <hr style={{ border: '0', borderTop: '2px dashed rgba(74,34,15,0.15)', margin: '4px 0' }} />
+
+                  {activeTab === 'invite' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div className="fee-badge" style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: '800',
+                        color: '#8c4e20',
+                        fontSize: '14px',
+                        marginBottom: '4px'
+                      }}>
+                        Entry Fee: <span className="coin-glow" style={{ color: '#e6a100' }}>🪙 500 Gold</span>
+                      </div>
+                      <button
+                        className="btn-3d btn-3d-yellow"
+                        style={{ width: '100%', height: '48px' }}
+                        disabled={loading}
+                        onClick={handleCreateOnline}
+                      >
+                        <Plus size={16} strokeWidth={3} /> CREATE ROOM
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div className="fee-badge" style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: '800',
+                        color: '#8c4e20',
+                        fontSize: '14px'
+                      }}>
+                        Entry Fee: <span className="coin-glow" style={{ color: '#e6a100' }}>🪙 500 Gold</span>
+                      </div>
+                      <div className="capsule-input-container">
+                        <input
+                          type="text"
+                          placeholder="ENTER 4-DIGIT ROOM ID..."
+                          value={roomInput}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9]/g, '');
+                            if (val.length <= 4) setRoomInput(val);
+                          }}
+                        />
+                        <button
+                          className="capsule-input-arrow-btn"
+                          disabled={loading}
+                          onClick={handleJoinOnline}
+                          title="Join Room"
+                        >
+                          <ArrowRight size={20} strokeWidth={3} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
         </div>
       </div>
+    </div>
+  );
+};
+
+// Coin burst particle animation helper component
+const CoinBurst = ({ onComplete }) => {
+  const [coinsList, setCoinsList] = useState([]);
+
+  useEffect(() => {
+    const list = Array.from({ length: 35 }).map((_, i) => {
+      const angle = Math.random() * Math.PI * 2;
+      const velocity = 5 + Math.random() * 15;
+      const rotationSpeed = (Math.random() - 0.5) * 720;
+      return {
+        id: i,
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2,
+        vx: Math.cos(angle) * velocity,
+        vy: Math.sin(angle) * velocity - 10,
+        rotation: Math.random() * 360,
+        vr: rotationSpeed,
+        scale: 0.5 + Math.random() * 0.7,
+        alpha: 1
+      };
+    });
+    setCoinsList(list);
+
+    let animationFrame;
+    const startTime = Date.now();
+    const update = () => {
+      const elapsed = Date.now() - startTime;
+      if (elapsed > 1200) {
+        onComplete();
+        return;
+      }
+      setCoinsList(prev => prev.map(c => {
+        const newVy = c.vy + 0.8; // gravity
+        return {
+          ...c,
+          x: c.x + c.vx,
+          y: c.y + c.vy,
+          vy: newVy,
+          rotation: c.rotation + c.vr * 0.016,
+          alpha: Math.max(0, 1 - elapsed / 1200)
+        };
+      }));
+      animationFrame = requestAnimationFrame(update);
+    };
+
+    animationFrame = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [onComplete]);
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      pointerEvents: 'none',
+      zIndex: 9999,
+      overflow: 'hidden'
+    }}>
+      {coinsList.map(c => (
+        <div
+          key={c.id}
+          style={{
+            position: 'absolute',
+            left: `${c.x}px`,
+            top: `${c.y}px`,
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, #ffe066 30%, #e6a100 80%, #996b00 100%)',
+            border: '2px solid #fff5cc',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.3), inset 0 2px 2px rgba(255,255,255,0.6)',
+            transform: `translate(-50%, -50%) rotate(${c.rotation}deg) scale(${c.scale})`,
+            opacity: c.alpha,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold',
+            color: '#4a220f',
+            fontSize: '11px',
+            fontFamily: 'sans-serif'
+          }}
+        >
+          $
+        </div>
+      ))}
     </div>
   );
 };
